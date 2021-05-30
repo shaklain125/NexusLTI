@@ -50,6 +50,8 @@ cd ./nexus/lib/web-ide && npm i && cd ../../../
 
 `sudo make run`
 
+Go to http://localhost:3000/users/login
+
 ## Development
 
 1. Open VScode `code .` in Linux environment (e.g. WSL2).
