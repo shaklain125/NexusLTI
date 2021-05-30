@@ -11,7 +11,7 @@ fi
 
 if [ "$1" = 'init-js' ]; then
 	cd lib/web-ide
-	npm install --production --silent
+	npm install --production
 	cd ../..
 
 	exec npm run build
@@ -36,10 +36,10 @@ if [ "$1" = 'init-db' ]; then
 fi
 
 if [ "$1" = 'init' ]; then
-	npm install --production --silent
+	npm install --production
 
 	cd lib/web-ide
-	npm install --production --silent
+	npm install --production
 	cd ../..
 
 	npm run build
