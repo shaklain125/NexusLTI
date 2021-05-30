@@ -1,0 +1,44 @@
+<% if user_signed_in? %>
+  <li class="dropdown">
+    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+      <%= current_user.name %> <span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu">
+      <% if current_user.ghe_profile_url %>
+        <li>
+          <%= link_to current_user.ghe_profile_url, target: '_blank' do %>
+            <%= icon 'github-square' %> GitHub Enterprise Profile
+          <% end %>
+        </li>
+      <% end %>
+      <% if Rails.configuration.github_com_oauth_id %>
+        <% if current_user.github_com_token %>
+          <li>
+            <%= link_to current_user.github_com_profile_url, target: '_blank' do %>
+              <%= icon 'github' %> GitHub.com Profile
+            <% end %>
+          </li>
+        <% else %>
+          <li>
+            <%= link_to(user_omniauth_authorize_url(provider: :github_com)) do %>
+              <%= icon 'github' %> Associate GitHub.com account
+            <% end %>
+          </li>
+        <% end %>
+      <% end %>
+      <% if Rails.configuration.github_com_oauth_id || current_user.ghe_profile_url %>
+        <li role="separator" class="divider"></li>
+      <% end %>
+      <li><%= link_to(destroy_user_session_path) do %>
+            <%= icon 'sign-out' %> Logout</a>
+          <% end %>
+      </li>
+    </ul>
+  </li>
+<% else %>
+  <li>
+    <%= link_to(user_omniauth_authorize_url(provider: :github)) do %>
+      <%= icon 'github' %> Login
+    <% end %>
+  </li>
+<% end %>

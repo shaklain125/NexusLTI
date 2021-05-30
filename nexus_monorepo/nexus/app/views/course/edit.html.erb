@@ -1,0 +1,13 @@
+<div class="well">
+  <h2>Edit Course</h2>
+  <hr />
+  <%= form_for(@course, url: update_course_path, html: { class: 'form-horizontal' }) do |f| %>
+    <%= render 'course_fields', f: f %>
+
+    <div class="form-group">
+      <div class="col-lg-10 col-lg-offset-2">
+        <%= f.submit 'Save Changes', class: 'btn btn-primary' %>
+      </div>
+    </div>
+  <% end %>
+</div>

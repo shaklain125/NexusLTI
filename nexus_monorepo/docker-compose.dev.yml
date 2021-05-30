@@ -1,0 +1,14 @@
+version: '2'
+services:
+  nexus:
+    build:
+      context: nexus/
+      dockerfile: Dockerfile.dev
+    tty: true
+    stdin_open: true
+    depends_on:
+      - sample-abstract-grader    
+  sneakers:
+    build:
+      context: nexus/
+      dockerfile: Dockerfile.dev

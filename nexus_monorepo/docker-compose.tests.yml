@@ -1,0 +1,83 @@
+# Requires Docker v 1.12 or above
+# The compose file for running grader tests. To be supplemented with appropriate grader definitons from the grader docker-compose file
+version: '2'
+services:
+  syslog:
+    image: voxxit/rsyslog:latest
+    ports:
+      - "5514:514/udp"
+    volumes:
+      - ./test-logs:/var/log
+  grader-tester:
+    build:
+      context: grader_tester/
+      dockerfile: Dockerfile
+    volumes:
+      - ./grader_tester/tests/scripts:/test-specs
+      - ./grader_tester/tests/repositories:/repositories:ro
+    environment:
+      NEXUS_ACCESS_TOKEN: test_access
+      GIT_PORT: 80
+      GIT_HOST: git-server
+    ports:
+      - "3000:3000"
+    depends_on:
+      - git-server
+      - syslog
+      - rng-tool # Need to include in dependencies or it won't get started
+      - config-tool # Need to include in dependencies or it won't get started
+      - javac-tool # Need to include in dependencies or it won't get started
+      - io-grader # Need to include in dependencies or it won't get started
+      - peer-feedback # Need to include in dependencies or it won't get started
+      - abstract-grader
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://localhost:5514"
+        tag: "grader-tester"
+  git-server:
+    build: grader_tester_gitserver/
+    volumes:
+      - ./grader_tester/tests/repositories:/var/lib/git
+      - ./grader_tester/tests/scripts/submissions:/var/lib/initial:ro
+    depends_on:
+      - syslog
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://localhost:5514"
+        tag: "git-server"
+  abstract-grader:
+    build: abstract-grader/
+    environment:
+      NEXUS_BASE_URL: http://grader-tester:3000
+      NEXUS_TOOL_CANONICAL_NAME: abstract-grader
+      NEXUS_ACCESS_TOKEN: foo
+      AUTH_TOKEN: foo
+      MYSQL_DATABASE: ag
+      MYSQL_USER: ag-tool
+      MYSQL_PASSWORD: ag-pass
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_HOST: agmysql
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://localhost:5514"
+        tag: "abstract-grader"
+    depends_on:
+      - syslog
+      - agmysql
+  agmysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: ag
+      MYSQL_USER: ag-tool
+      MYSQL_PASSWORD: ag-pass
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://localhost:5514"
+        tag: "ag-db"

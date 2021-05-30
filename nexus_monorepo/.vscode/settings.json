@@ -1,0 +1,49 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/*grader*": true,
+    "**/*tool*": true,
+    "**/*data*": true,
+    "**/*compilation*": true,
+    "**/*dump*": true,
+    "**/*tester*": true,
+    "**/*.md": true,
+    "**/.env*": true,
+    "**/*.yml": true,
+    "**/.build-mode": true,
+    "**/logs": true,
+    "**/peerfeedback": true,
+    "**/*.git*": true,
+    "**/*.sh": true,
+    
+
+    "**/nexus/node_modules": true,
+    "**/nexus/bin": true,
+    "**/nexus/public": true,
+    "**/nexus/tmp": true,
+    "**/nexus/var": true,
+    "**/nexus/*.git*": true,
+    "**/nexus/*.docx": true,
+    "**/nexus/*.pdf": true,
+    "**/nexus/*docker*": true,
+    "**/nexus/*Docker*": true,
+    "**/nexus/*.sh": true,
+    "**/nexus/*.ru": true,
+    "**/nexus/*ruby*": true,
+    "**/nexus/*Rake*": true,
+    "**/nexus/.rspec": true,
+    "**/nexus/*-lock*": true,
+    "**/nexus/*.lock": true,
+
+    
+    "**/nexus/lib/web-ide/node_modules": true,
+    "**/nexus/lib/web-ide/*-lock*": true,
+
+    "**/nexus/db/migrate": true,
+    "**/nexus/db/*.sql*": true
+  }
+}
