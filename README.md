@@ -34,6 +34,12 @@ sudo make init-env && cat /mnt/d/Desktop/Project/ENV_SETTINGS.txt > .env.list
 cd ./sample-configurable-tool/configPage && npm i && cd ../../
 ```
 
+4. Install web-ide dependencies **(required)**
+
+```
+cd ./nexus/lib/web-ide && npm i && cd ../../../
+```
+
 ### Nexus commands
 
 `sudo make abstract-rsa` AND COPY RSA TO GITHUB SSH KEY https://github.com/settings/keys
