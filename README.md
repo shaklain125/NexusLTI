@@ -25,7 +25,7 @@ git clone --single-branch --branch master https://github.com/shaklain125/NexusLT
 2. Set Env (manually create the env variables by following the Nexus repo instructions the first time and save it to a file for future use)
 
 ```
-sudo make init-env && cat /mnt/d/Desktop/Project/ENV_SETTINGS.txt > .env.list
+sudo make init-env && cat /mnt/d/Desktop/Project/ENV_SETTINGS.txt | sudo tee .env.list
 ```
 
 3. Install configPage node_modules **(required)**
