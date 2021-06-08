@@ -7,10 +7,6 @@
     "**/log*": true,
     "**/*.docx": true,
     "**/*.pdf": true,
-    "**/[^.]*.yml": true,
-    "**/?[^r]*.yml": true,
-    "**/??[^u]*.yml": true,
-    "**/???[^b]*.yml": true,
 
     ".env*": true,
     ".build-mode": true,

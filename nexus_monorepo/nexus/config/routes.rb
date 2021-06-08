@@ -98,6 +98,9 @@ Rails.application.routes.draw do
   post 'report_mark/:sid/:tool_uid' => 'intermediate_mark#report', as: :report_mark
   post 'report_feedback/:sid/:tool_uid' => 'feedback_item#report', as: :report_feedback
 
+  ### LTI
+  get 'lti' => 'lti#launch', as: :lti_launch
+
   ### Root
   root 'pages#landing'
 end

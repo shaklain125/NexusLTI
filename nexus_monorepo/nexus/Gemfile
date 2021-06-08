@@ -76,3 +76,10 @@ end
 gem 'sneakers'
 
 gem 'active_record_union'
+
+gem 'ims-lti', '~> 2.1.2'
+gem 'oauth'
+gem 'oauth2'
+gem 'oauth-plugin'
+gem 'omniauth-lti'
+gem 'simple_oauth'
