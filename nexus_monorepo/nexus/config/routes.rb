@@ -99,7 +99,32 @@ Rails.application.routes.draw do
   post 'report_feedback/:sid/:tool_uid' => 'feedback_item#report', as: :report_feedback
 
   ### LTI
-  get 'lti' => 'lti#launch', as: :lti_launch
+  scope(controller: :lti) do
+    Rails.application.routes.draw do
+      LTI_RESOURCE_HANDLERS.each do |config|
+        config[:messages].each do |message|
+          route = message[:route].symbolize_keys
+          path = route.delete(:path) || ':controller/:action'
+          path = "lti/message/#{path}"
+          post path, route
+        end
+      end
+    end
+
+    get 'lti/launch', action: :launch, as: :lti_get_launch
+    post 'lti/launch', action: :launch, as: :lti_post_launch
+  end
+
+  scope(controller: :lti_registration) do
+    post 'lti/register', action: :register, as: :lti_registration
+    post 'lti/reregister', action: :register, as: :lti_reregistration
+    post 'lti/submit_capabilities', action: :save_capabilities, as: :lti_save_capabilities
+    get 'lti/submit_proxy/:registration_uuid', action: :submit_proxy, as: :lti_submit_proxy
+
+    get 'lti/tool_proxy/:tool_proxy_id', action: :show, as: :show_tool
+    put 'lti/tool_proxy/:tool_proxy_guid', action: :apply_rereg, as: :rereg_confirmation
+    delete 'lti/tool_proxy/:tool_proxy_guid', action: :delete_rereg, as: :delete_rereg
+  end
 
   ### Root
   root 'pages#landing'

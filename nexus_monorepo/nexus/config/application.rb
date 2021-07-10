@@ -52,5 +52,8 @@ module Fyp
     config.ghe_org = ENV['NEXUS_GITHUB_ORG'] || 'ppa-dev'
     config.uat_host = ENV['NEXUS_UAT_HOST'] || 'unique-assignment-tool'
     config.uat_port = ENV['NEXUS_UAT_PORT'] || 3009
+
+    config.autoload_paths += %W[#{config.root}/lib]
+    config.action_dispatch.default_headers.delete "X-Frame-Options"
   end
 end

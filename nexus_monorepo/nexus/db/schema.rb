@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180516111715) do
+ActiveRecord::Schema.define(version: 20210709174407) do
 
   create_table "access_tokens", force: :cascade do |t|
     t.string   "access_token", null: false
@@ -109,6 +109,36 @@ ActiveRecord::Schema.define(version: 20180516111715) do
 
   add_index "intermediate_marks", ["marking_tool_id"], name: "index_intermediate_marks_on_marking_tool_id"
   add_index "intermediate_marks", ["submission_id"], name: "index_intermediate_marks_on_submission_id"
+
+  create_table "lti_launches", force: :cascade do |t|
+    t.integer  "lti_tool_id", limit: 8
+    t.string   "nonce"
+    t.text     "message"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "lti_registrations", force: :cascade do |t|
+    t.string   "uuid"
+    t.text     "registration_request_params"
+    t.text     "tool_proxy_json"
+    t.string   "workflow_state"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "lti_tool_id",                 limit: 8
+    t.text     "correlation_id"
+  end
+
+  add_index "lti_registrations", ["correlation_id"], name: "index_lti_registrations_on_correlation_id", unique: true
+
+  create_table "lti_tools", force: :cascade do |t|
+    t.string   "uuid"
+    t.text     "shared_secret"
+    t.text     "tool_settings"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "lti_version"
+  end
 
   create_table "marking_tool_contexts", force: :cascade do |t|
     t.integer  "assignment_id"

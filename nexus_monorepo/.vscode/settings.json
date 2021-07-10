@@ -34,7 +34,7 @@
     "nexus/**/.rspec": true,
     "nexus/**/*-lock*": true,
     "nexus/**/*.lock": true,
-    "nexus/**/migrate": true,
+    "nexus/**/migrate": false,
     "nexus/**/*.sql*": true
   },
 
