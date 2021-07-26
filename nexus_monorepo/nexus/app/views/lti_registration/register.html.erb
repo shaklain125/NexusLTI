@@ -56,16 +56,14 @@
             </label>
           </td>
           <td>
-            <input type="text" class="form-control" value="<%= cap.downcase.gsub('.', '_') %>" name="variable_parameters[<%= cap %>][name]"/>
+            <%= cap.downcase.gsub('.', '_') %>
+            <input type="hidden" name="variable_parameters[<%= cap %>][name]" value="<%= cap.downcase.gsub('.', '_') %>"/>
           </td>
           <td style="line-height: 2.2;"><%= cap %></td>
         </tr>
       <% end %>
       </tbody>
     </table>
-
-    <p><strong>What default Tool Settings do you want?</strong></p>
-    <textarea name="tool_settings">{"default":42}</textarea>
 
     <div style="padding-top: 15px; margin-top: 15px; border-top: 1px solid #DDDDDD;">
       <input type="submit" class="btn btn-primary" value="Submit">

@@ -1,10 +1,10 @@
 code: default
 name:
-  default_value: Lti2Example
+  default_value: NexusLTI
   key: default.name
 
 description:
-  default_value: Lti 2 Example Launch
+  default_value: Nexus Lti 2 Launch
   key: default.description
 
 messages:

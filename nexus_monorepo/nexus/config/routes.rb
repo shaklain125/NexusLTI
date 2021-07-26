@@ -105,25 +105,17 @@ Rails.application.routes.draw do
         config[:messages].each do |message|
           route = message[:route].symbolize_keys
           path = route.delete(:path) || ':controller/:action'
-          path = "lti/message/#{path}"
-          post path, route
+          post "lti/message/#{path}", route
         end
       end
     end
-
-    get 'lti/launch', action: :launch, as: :lti_get_launch
-    post 'lti/launch', action: :launch, as: :lti_post_launch
   end
 
   scope(controller: :lti_registration) do
     post 'lti/register', action: :register, as: :lti_registration
-    post 'lti/reregister', action: :register, as: :lti_reregistration
     post 'lti/submit_capabilities', action: :save_capabilities, as: :lti_save_capabilities
     get 'lti/submit_proxy/:registration_uuid', action: :submit_proxy, as: :lti_submit_proxy
-
     get 'lti/tool_proxy/:tool_proxy_id', action: :show, as: :show_tool
-    put 'lti/tool_proxy/:tool_proxy_guid', action: :apply_rereg, as: :rereg_confirmation
-    delete 'lti/tool_proxy/:tool_proxy_guid', action: :delete_rereg, as: :delete_rereg
   end
 
   ### Root

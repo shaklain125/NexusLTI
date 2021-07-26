@@ -48,7 +48,7 @@ class LtiToolProxyRegistration
 
   def product_instance
     unless @product_instance
-      product_instance_config = Rails.root.join('config', 'product_instance.json')
+      product_instance_config = Rails.root.join('config', 'lti', 'product_instance.json')
       raise 'MissingProductInstaceConfig' unless File.exist? product_instance_config
       @product_instance = IMS::LTI::Models::ProductInstance.new.from_json(File.read(product_instance_config))
     end
@@ -68,7 +68,9 @@ class LtiToolProxyRegistration
 
   def self.register(registration, controller)
     registration_request = registration.registration_request
+
     raise 'ToolProxyAlreadyRegisteredException' if registration.workflow_state == :registered
+
     registration_service = IMS::LTI::Services::ToolProxyRegistrationService.new(registration_request)
     tool_proxy = registration.tool_proxy
     return_url = registration.registration_request.launch_presentation_return_url
@@ -76,32 +78,17 @@ class LtiToolProxyRegistration
     registered_proxy = registration_service.register_tool_proxy(tool_proxy)
     tool_proxy.tool_proxy_guid = registered_proxy.tool_proxy_guid
     tool_proxy.id = controller.show_tool_url(registered_proxy.tool_proxy_guid)
+
     shared_secret = if tc_secret = registered_proxy.tc_half_shared_secret
                       tc_secret + tool_proxy.security_contract.tp_half_shared_secret
                     else
                       tool_proxy.security_contract.shared_secret
                     end
+
     tp = LtiTool.create!(shared_secret: shared_secret, uuid: registered_proxy.tool_proxy_guid, tool_settings: tool_proxy.as_json, lti_version: tool_proxy.lti_version)
+
     registration.update(workflow_state: 'registered', lti_tool: tp)
-    {
-      tool_proxy_uuid: tool_proxy.tool_proxy_guid,
-      return_url: return_url,
-      status: 'success'
-    }
-  end
 
-  def self.reregister(registration, controller)
-    registration_request = registration.registration_request
-    raise 'ToolProxyAlreadyRegisteredException' if [:registered, :rereg_pending].include?(registration.workflow_state)
-    registration_service = IMS::LTI::Services::ToolProxyRegistrationService.new(registration_request)
-    tool_proxy = registration.tool_proxy
-    tool_proxy.tool_proxy_guid = registration.tool.uuid
-    return_url = registration.registration_request.launch_presentation_return_url
-    tool = registration.tool
-
-    confirmation_url = controller.rereg_confirmation_url(tool.uuid, correlation_id: registration.correlation_id)
-    registered_proxy = registration_service.register_tool_proxy(tool_proxy, confirmation_url, tool.shared_secret)
-    registration.update(workflow_state: 'rereg_pending', tool_proxy_json: registered_proxy.as_json)
     {
       tool_proxy_uuid: tool_proxy.tool_proxy_guid,
       return_url: return_url,
@@ -136,7 +123,6 @@ class LtiToolProxyRegistration
 
   def parameters(params)
     (params || []).map do |p|
-      # TODO: check if variable parameters are in the capabilities offered
       IMS::LTI::Models::Parameter.new(p.symbolize_keys)
     end
   end
@@ -144,7 +130,7 @@ class LtiToolProxyRegistration
   def capabilities(message)
     req_capabilities = message['required_capabilities'] || []
     opt_capabilities = message['optional_capabilities'] || []
-    raise UnsupportedCapabilitiesError unless (req_capabilities - (tool_consumer_profile.capability_offered || [])).size == 0
+    raise UnsupportedCapabilitiesError unless (req_capabilities - (tool_consumer_profile.capability_offered || [])).empty?
     req_capabilities + opt_capabilities
   end
 

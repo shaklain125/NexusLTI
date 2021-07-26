@@ -1,6 +1,6 @@
 require 'ims/lti'
 class LtiController < ApplicationController
-  include LtiControllerHelpers
+  include LtiHelper
 
   skip_before_action :verify_authenticity_token, only: [:launch]
   before_filter :lti_authentication
