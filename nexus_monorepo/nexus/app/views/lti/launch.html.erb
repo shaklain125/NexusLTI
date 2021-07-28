@@ -1,30 +1,19 @@
 <h1>LTI Launch</h1>
-<form method="post" action="<%= edit_assignment_post_path %>">
-    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
-    
-    <input type="hidden" name="id" value="1"/>
 
-    <div style="padding-top: 15px; margin-top: 15px;">
-      <input type="submit" name="commit" value="Edit" class="btn btn-primary">
-    </div>
-</form>
+<script>
+  function confirmDeletion() {
+    return confirm("This action will delete the assignment and all its submissions. Are you sure?");
+  }
+</script>
 
-<form method="post" action="<%= new_assignment_post_path %>">
-    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
-    
-    <input type="hidden" name="cid" value="1"/>
+<%= link_to(new_assignment_path(cid: 1)) do %>
+    <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
+<% end %>
 
-    <div style="padding-top: 15px; margin-top: 15px;">
-      <input type="submit" name="commit" value="Create" class="btn btn-primary">
-    </div>
-</form>
+<%= link_to(edit_assignment_path(id: 1)) do %>
+  <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'edit' %> Edit Assignment</button>
+<% end %>
 
-<form method="post" action="<%= delete_assignment_post_path %>">
-    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
-    
-    <input type="hidden" name="id" value="4"/>
-
-    <div style="padding-top: 15px; margin-top: 15px;">
-      <input type="submit" name="commit" value="Delete" class="btn btn-primary">
-    </div>
-</form>
+<%= link_to(delete_assignment_path(id: 5), onclick: 'return confirmDeletion()') do %>
+    <button type="button" class="btn btn-sm btn-danger"><%= icon 'times' %> Delete Assignment</button>
+<% end %>

@@ -2,15 +2,14 @@ class CourseController < ApplicationController
   include ApplicationHelper
   require_relative '../lib/git_utils'
 
-  before_action :authenticate_user!
+  before_action :authenticate_user_or_lti!
   before_action :authenticate_admin!, except: [:index, :mine, :show, :enrolment_list, :edit, :update, :destroy]
 
   def index
     @courses = Course.all.order(:title)
   end
 
-  def mine
-  end
+  def mine; end
 
   def show
     @course = return_course!

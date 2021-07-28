@@ -36,15 +36,9 @@
     </ul>
   </li>
 <% else %>
-  
-  <% if params[:t_id].nil? && @tool_id.nil? %>
-
-    <li>
-      <%= link_to(user_omniauth_authorize_url(provider: :github)) do %>
-        <%= icon 'github' %> Login
-      <% end %>
-    </li>
-
-  <% end %>
-
+  <li>
+    <%= link_to(user_omniauth_authorize_url(provider: :github)) do %>
+      <%= icon 'github' %> Login
+    <% end %>
+  </li>
 <% end %>

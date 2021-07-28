@@ -42,9 +42,6 @@ Rails.application.routes.draw do
   get 'assignments/:id/repush_submissions' => 'assignment#prepare_submission_repush', as: :assignment_prepare_submission_repush
   patch 'assignments/:id/repush_submissions' => 'assignment#submission_repush', as: :assignment_submission_repush
   get 'assignments/delete/:id' => 'assignment#destroy', as: :delete_assignment
-  post 'assignments/new' => 'assignment#new', as: :new_assignment_post
-  post 'assignments/edit' => 'assignment#edit', as: :edit_assignment_post
-  post 'assignments/delete' => 'assignment#destroy_post', as: :delete_assignment_post
 
   ### Deadline Extensions
   get 'assignments/:aid/deadline_extensions/new' => 'deadline_extension#new', as: :new_deadline_extension
@@ -112,6 +109,8 @@ Rails.application.routes.draw do
         end
       end
     end
+    get 'lti/launch2', action: :launch2, as: :lti_launch2
+    get 'lti/launch3', action: :launch3, as: :lti_launch3
   end
 
   scope(controller: :lti_registration) do

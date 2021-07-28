@@ -5,10 +5,14 @@ module LtiHelper
     end
   end
 
-  def lti_authentication
+  def parsed_lti_message(request)
     lti_message = IMS::LTI::Models::Messages::Message.generate(request.request_parameters)
     lti_message.launch_url = request.url
-    @lti_launch = LtiLaunch.check_launch(lti_message)
+    lti_message
+  end
+
+  def lti_authentication
+    @lti_launch = LtiLaunch.check_launch(parsed_lti_message(request))
   end
 
   def disable_xframe_header

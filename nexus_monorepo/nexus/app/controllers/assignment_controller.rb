@@ -143,22 +143,6 @@ class AssignmentController < ApplicationController
     end
   end
 
-  def destroy_post
-    assignment = return_assignment!
-    if assignment
-      return unless authenticate_can_administrate!(assignment.course)
-
-      repo_was_deleted = GitUtils.delete_remote_assignment_repo!(assignment)
-      if repo_was_deleted
-        Assignment.destroy(assignment.id)
-        flash[:success] = 'Assignment deleted successfully'
-      else
-        flash[:error] = 'Assignment was not deleted. Please try again'
-      end
-
-    end
-  end
-
   def export_submissions_data
     @assignment = return_assignment!
     if @assignment

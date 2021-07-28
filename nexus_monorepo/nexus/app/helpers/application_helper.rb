@@ -8,19 +8,17 @@ module ApplicationHelper
   end
 
   def authenticate_can_administrate!(course)
-    return true if check_lti?
     return true if current_user && current_user.can_administrate?(course)
     redirect_to error_url('403'), status: 403
     false
   end
 
   def authenticate_user_or_lti!
-    return true if check_lti?
+    return true if current_user
     authenticate_user!
   end
 
   def authenticate_admin!
-    return true if check_lti?
     return true if admin?
     redirect_to error_url('403'), status: 403
     false

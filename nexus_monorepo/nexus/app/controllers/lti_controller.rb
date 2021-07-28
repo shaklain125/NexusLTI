@@ -2,7 +2,7 @@ require 'ims/lti'
 class LtiController < ApplicationController
   include LtiHelper
 
-  before_filter :lti_authentication
+  before_filter :lti_authentication, only: [:launch]
 
   def launch
     tool = LtiTool.find(@lti_launch.lti_tool_id)
@@ -16,8 +16,23 @@ class LtiController < ApplicationController
     #                                     'lti_tool' => tool.as_json
     #                                   } })
     # render json: JSON.pretty_generate({ launch: params })
-    # render json: JSON.pretty_generate({ assignments: Assignment.all.to_json })
-    # redirect_to new_user_session_path
-    @tool_id = @lti_launch.lti_tool_id
+
+    params[:lti_user] = 1
+    # redirect_to edit_assignment_path(1)
+    # redirect_to lti_launch2_path
+    # render json: JSON.pretty_generate({
+    #                                     signed_in: user_signed_in?,
+    #                                     current_user: current_user.as_json
+    #                                   })
+  end
+
+  def launch2
+    # redirect_to lti_launch3_path
+    render json: JSON.pretty_generate({ params: params })
+    # render json: JSON.pretty_generate({ user: current_user.as_json })
+  end
+
+  def launch3
+    render json: JSON.pretty_generate({ user: current_user.as_json })
   end
 end

@@ -31,4 +31,24 @@ class ApplicationController < ActionController::Base
     # Use the below instead for devise versions > 4.1
     # devise_parameter_sanitizer.permit(:sign_up, keys: [:email, :first_name, :last_name, :student_id, :password, :password_confirmation])
   end
+
+  def devise_current_user
+    @devise_current_user ||= warden.authenticate(scope: :user)
+  end
+
+  def current_user
+    if params[:lti_user].nil?
+      devise_current_user
+    else
+      User.find(params[:lti_user])
+    end
+  end
+
+  def default_url_options(options = {})
+    puts('DEFAULT PARAMS--------------------------------')
+    puts(action_name)
+    puts(params)
+    options[:lti_user] = params[:lti_user] unless params[:lti_user].nil?
+    options
+  end
 end
