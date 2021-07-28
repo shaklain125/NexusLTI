@@ -1,1 +1,30 @@
 <h1>LTI Launch</h1>
+<form method="post" action="<%= edit_assignment_post_path %>">
+    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
+    
+    <input type="hidden" name="id" value="1"/>
+
+    <div style="padding-top: 15px; margin-top: 15px;">
+      <input type="submit" name="commit" value="Edit" class="btn btn-primary">
+    </div>
+</form>
+
+<form method="post" action="<%= new_assignment_post_path %>">
+    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
+    
+    <input type="hidden" name="cid" value="1"/>
+
+    <div style="padding-top: 15px; margin-top: 15px;">
+      <input type="submit" name="commit" value="Create" class="btn btn-primary">
+    </div>
+</form>
+
+<form method="post" action="<%= delete_assignment_post_path %>">
+    <input type="hidden" name="t_id" value="<%= @tool_id %>"/>
+    
+    <input type="hidden" name="id" value="4"/>
+
+    <div style="padding-top: 15px; margin-top: 15px;">
+      <input type="submit" name="commit" value="Delete" class="btn btn-primary">
+    </div>
+</form>

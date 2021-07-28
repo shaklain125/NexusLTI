@@ -8,7 +8,11 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <%= link_to "Nexus", root_path, class: "navbar-brand" %>
+      <% if params[:t_id].nil? && @tool_id.nil? %>
+        <%= link_to "Nexus", root_path, class: "navbar-brand" %>
+      <% else %>
+        <%= link_to "Nexus", "javascript:void(0)", class: "navbar-brand" %>  
+      <% end %>
     </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->

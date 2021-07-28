@@ -1,4 +1,10 @@
 module LtiHelper
+  class << self
+    def check_lti_tool(id)
+      !LtiTool.where(id: id).empty?
+    end
+  end
+
   def lti_authentication
     lti_message = IMS::LTI::Models::Messages::Message.generate(request.request_parameters)
     lti_message.launch_url = request.url

@@ -3,13 +3,24 @@ module ApplicationHelper
     "#{ENV['RAILS_RELATIVE_URL_ROOT']}/#{code}"
   end
 
+  def check_lti?
+    LtiHelper.check_lti_tool(params[:t_id])
+  end
+
   def authenticate_can_administrate!(course)
+    return true if check_lti?
     return true if current_user && current_user.can_administrate?(course)
     redirect_to error_url('403'), status: 403
     false
   end
 
+  def authenticate_user_or_lti!
+    return true if check_lti?
+    authenticate_user!
+  end
+
   def authenticate_admin!
+    return true if check_lti?
     return true if admin?
     redirect_to error_url('403'), status: 403
     false
@@ -99,11 +110,9 @@ module ApplicationHelper
 
   def nexus_for_feedback
     nexus = MarkingTool.find_by(uid: 'nexus')
-    unless nexus
-      nexus = MarkingTool.create(name: 'Nexus',
+    nexus ||= MarkingTool.create(name: 'Nexus',
                                  uid: 'nexus',
                                  url: "#{request.protocol}#{request.host_with_port}/")
-    end
     nexus
   end
 end

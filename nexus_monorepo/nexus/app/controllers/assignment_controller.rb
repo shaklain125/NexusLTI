@@ -3,11 +3,10 @@ class AssignmentController < ApplicationController
   require_relative '../lib/git_utils'
   require_relative '../lib/workflow_utils'
 
-  before_action :authenticate_user!
+  before_action :authenticate_user_or_lti!
   before_action :authenticate_admin!, except: [:mine, :show, :show_deadline_extensions, :quick_config_confirm, :configure_tools, :new, :create, :edit, :update, :destroy, :export_submissions_data, :list_submissions, :list_ordered_submissions, :prepare_submission_repush, :submission_repush]
 
-  def mine
-  end
+  def mine; end
 
   def show
     @assignment = return_assignment!
@@ -141,6 +140,22 @@ class AssignmentController < ApplicationController
         flash[:error] = 'Assignment was not deleted. Please try again'
       end
       redirect_to course
+    end
+  end
+
+  def destroy_post
+    assignment = return_assignment!
+    if assignment
+      return unless authenticate_can_administrate!(assignment.course)
+
+      repo_was_deleted = GitUtils.delete_remote_assignment_repo!(assignment)
+      if repo_was_deleted
+        Assignment.destroy(assignment.id)
+        flash[:success] = 'Assignment deleted successfully'
+      else
+        flash[:error] = 'Assignment was not deleted. Please try again'
+      end
+
     end
   end
 
