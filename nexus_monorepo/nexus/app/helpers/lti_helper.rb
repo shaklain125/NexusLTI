@@ -3,6 +3,87 @@ module LtiHelper
     def check_lti_tool(id)
       !LtiTool.where(id: id).empty?
     end
+
+    def _get_token_param(params)
+      params[:lti_token]
+    end
+
+    def contains_token_param(params)
+      !params[:lti_token].nil?
+    end
+
+    def contains_token_param_raise(params)
+      # raise if token missing
+      raise LtiLaunch::Unauthorized, :invalid unless contains_token_param(params)
+    end
+
+    def raise_if_contains_token(params)
+      raise LtiLaunch::Unauthorized, :invalid if contains_token_param(params)
+    end
+
+    def get_tool_id(params)
+      get_token(params)[:tool_id]
+    end
+
+    def get_token(params)
+      _token = _get_token_param(params)
+      token = decrypt_json(_token)
+      return {} if token.empty?
+      token.symbolize_keys
+    end
+
+    def invalid_token(params)
+      _token = _get_token_param(params)
+      token = decrypt_json(_token)
+      return true if token.empty?
+      false
+    end
+
+    def invalid_token_raise(params)
+      # raise if it contains token and is invalid
+      contains_token = contains_token_param(params)
+      invalid = invalid_token(params)
+      raise LtiLaunch::Unauthorized, :invalid if contains_token && invalid
+      false
+    end
+
+    def encrypt_json(plain)
+      encrypt(plain.to_json)
+    end
+
+    def decrypt_json(cipher)
+      return {} if cipher.nil?
+      decipher = decrypt(cipher)
+      JSON.parse(decipher)
+    rescue StandardError => _e
+      {}
+    end
+
+    def encrypt(str)
+      _encrypt(str, '8cb13f93bf4b9bd12846d08c8814755d35fea3ff491bf08a0bbf381fe9a80892703ee58b072c18acc376d72b0d42ad392e42c63309e46e3aff63b450c396520d')
+    end
+
+    def decrypt(str)
+      _decrypt(str, '8cb13f93bf4b9bd12846d08c8814755d35fea3ff491bf08a0bbf381fe9a80892703ee58b072c18acc376d72b0d42ad392e42c63309e46e3aff63b450c396520d')
+    end
+
+    def _encrypt(str, key)
+      # OpenSSL::Cipher.ciphers
+      cipher = OpenSSL::Cipher.new('CAMELLIA-192-OFB').encrypt
+      cipher.key = Digest::SHA1.hexdigest key
+      s = cipher.update(str) + cipher.final
+      s = s.unpack('H*')
+      s.first # .upcase
+    end
+
+    def _decrypt(str, key)
+      cipher = OpenSSL::Cipher.new('CAMELLIA-192-OFB').decrypt
+      cipher.key = Digest::SHA1.hexdigest key
+      s = [str].pack("H*").unpack("C*").pack("c*")
+      cipher.update(s) + cipher.final
+    end
+
+    private :_get_token_param, :_encrypt, :_decrypt
   end
 
   def parsed_lti_message(request)

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20210728174637) do
+ActiveRecord::Schema.define(version: 20210729004335) do
 
   create_table "access_tokens", force: :cascade do |t|
     t.string   "access_token", null: false
@@ -130,6 +130,13 @@ ActiveRecord::Schema.define(version: 20210728174637) do
   end
 
   add_index "lti_registrations", ["correlation_id"], name: "index_lti_registrations_on_correlation_id", unique: true
+
+  create_table "lti_sessions", force: :cascade do |t|
+    t.string   "lti_tool_id"
+    t.string   "user_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "lti_tools", force: :cascade do |t|
     t.string   "uuid"

@@ -4,7 +4,7 @@
     "**/*.md": true,
     "**/*.sh": true,
     "**/.svn": true,
-    "**/log*": true,
+    "./**/log*": true,
     "**/*.docx": true,
     "**/*.pdf": true,
 

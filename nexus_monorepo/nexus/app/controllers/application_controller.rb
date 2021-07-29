@@ -6,6 +6,8 @@ class ApplicationController < ActionController::Base
   # Devise strong parameters
   before_action :configure_permitted_parameters, if: :devise_controller?
 
+  before_action :lti_auth
+
   rescue_from LtiLaunch::Unauthorized do |ex|
     @error = "Authentication failed with: #{case ex.error
                                             when :invalid_signature
@@ -24,6 +26,10 @@ class ApplicationController < ActionController::Base
 
   protected
 
+  def lti_auth
+    LtiHelper.invalid_token_raise(params)
+  end
+
   def configure_permitted_parameters
     devise_parameter_sanitizer.for(:sign_up) do |u|
       u.permit(:email, :first_name, :last_name, :student_id, :password, :password_confirmation)
@@ -37,18 +43,19 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user
-    if params[:lti_user].nil?
-      devise_current_user
-    else
-      User.find(params[:lti_user])
+    unless LtiHelper.invalid_token(params)
+      lti_session = LtiSession.find_by_lti_tool_id(LtiHelper.get_tool_id(params))
+      return nil unless lti_session
+      return lti_session.user
     end
+    devise_current_user
   end
 
   def default_url_options(options = {})
-    puts('DEFAULT PARAMS--------------------------------')
-    puts(action_name)
-    puts(params)
-    options[:lti_user] = params[:lti_user] unless params[:lti_user].nil?
+    # puts('DEFAULT PARAMS--------------------------------')
+    # puts(action_name)
+    # puts(params)
+    options[:lti_token] = params[:lti_token] unless LtiHelper.invalid_token(params)
     options
   end
 end

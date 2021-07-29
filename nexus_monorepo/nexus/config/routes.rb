@@ -109,8 +109,18 @@ Rails.application.routes.draw do
         end
       end
     end
+
+    get 'lti/index', action: :index, as: :lti_home
+    get 'lti/login', action: :login, as: :lti_login
+    post 'lti/login', action: :login_post, as: :login_post
+    get 'lti/logout', action: :logout, as: :lti_logout
+
+    get 'lti/configure', action: :configure, as: :lti_configure
+    get 'lti/manage_assignment', action: :manage_assignment, as: :lti_manage_assignment
+
     get 'lti/launch2', action: :launch2, as: :lti_launch2
     get 'lti/launch3', action: :launch3, as: :lti_launch3
+
   end
 
   scope(controller: :lti_registration) do

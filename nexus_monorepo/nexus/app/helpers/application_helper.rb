@@ -3,23 +3,26 @@ module ApplicationHelper
     "#{ENV['RAILS_RELATIVE_URL_ROOT']}/#{code}"
   end
 
-  def check_lti?
-    LtiHelper.check_lti_tool(params[:t_id])
+  def raise_if_lti_token(params)
+    LtiHelper.raise_if_contains_token(params)
   end
 
   def authenticate_can_administrate!(course)
     return true if current_user && current_user.can_administrate?(course)
+    raise_if_lti_token(params)
     redirect_to error_url('403'), status: 403
     false
   end
 
   def authenticate_user_or_lti!
     return true if current_user
+    raise_if_lti_token(params)
     authenticate_user!
   end
 
   def authenticate_admin!
     return true if admin?
+    raise_if_lti_token(params)
     redirect_to error_url('403'), status: 403
     false
   end
