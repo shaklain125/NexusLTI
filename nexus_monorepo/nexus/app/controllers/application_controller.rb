@@ -27,16 +27,18 @@ class ApplicationController < ActionController::Base
   protected
 
   def lti_auth
-    LtiHelper.invalid_token_raise(params)
-    @is_teacher = LtiHelper.verify_teacher(params)
-    @is_student = LtiHelper.verify_student(params)
-    LtiHelper::LtiRole.if_student_show_student_pages_raise(params, controller_name)
+    @is_lti = LtiHelper.contains_token_param(params)
     @referrer = request.referrer
     @session_id = session[:session_id]
-    @is_lti = LtiHelper.contains_token_param(params)
+    @is_teacher = LtiHelper.verify_teacher(params)
+    @is_student = LtiHelper.verify_student(params)
+    @is_lti_error = true
+    LtiHelper.invalid_token_raise(params)
+    LtiHelper::LtiRole.if_student_show_student_pages_raise(params, controller_name)
     LtiHelper.raise_if_null_referrer_and_lti(request, params)
     LtiHelper.raise_if_session_and_lti(session, params)
     LtiHelper::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
+    @is_lti_error = false
   end
 
   def configure_permitted_parameters
@@ -53,9 +55,10 @@ class ApplicationController < ActionController::Base
 
   def current_user
     unless LtiHelper.invalid_token(params)
-      lti_session = LtiSession.find_by_lti_tool_id(LtiHelper.get_tool_id(params))
-      return nil unless lti_session
-      return lti_session.user
+      return nil if @is_teacher && !LtiHelper.get_user_id(params)
+      lti_session = LtiSession.where({ lti_tool: LtiHelper.get_tool_id(params), user: LtiHelper.get_user_id(params) })
+      return nil unless lti_session.any?
+      return lti_session.first.user
     end
     devise_current_user
   end

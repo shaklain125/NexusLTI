@@ -1,7 +1,9 @@
 <div class="row">
   <div class="col-md-8">
     <div>
-      <h5 class="course-title"><%= icon 'tasks' %> <%= link_to @submission.assignment.title, @submission.assignment %></h5>
+      <% if @is_teacher || !@is_lti %>
+        <h5 class="course-title"><%= icon 'tasks' %> <%= link_to @submission.assignment.title, @submission.assignment %></h5>
+      <% end %>
       <h2>Attempt #<%= @submission.attempt_number%></h2>
       <% if @submission.user != current_user %>
         <div>
@@ -59,21 +61,15 @@
         <br>
         <h6>Clone command:</h6>
         <input type="text" class="form-control cloneurl-field" value="git clone --branch <%= @submission.gitbranch %> --single-branch <%= @submission.augmented_clone_url %> submission<%= @submission.id%>" readonly></input>
-      <% end %>
-    </div>
+    <% end %>
   </div>
 </div>
-
+</div>
 <% if !@submission.assignment.feedback_only %>
-<h4>Final Mark: <%= display_final_mark @submission %></h4>
+  <h4>Final Mark: <%= display_final_mark @submission %></h4>
 <% end %>
-
 <br />
-
 <%= render 'marking_breakdown' %>
-
 <br />
-
 <%= render 'feedback_items' %>
-
 <%= render partial: 'audit_item/panel', locals: { items: @submission.audit_items.asc, course: @submission.assignment.course } %>

@@ -25,7 +25,7 @@
     "nexus/**/bin": true,
     "nexus/**/public": true,
     "nexus/**/tmp": true,
-    "nexus/**/var": true,
+    "nexus/**/var": false,
     "nexus/**/*docker*": true,
     "nexus/**/*Docker*": true,
     "nexus/**/*.ru": true,

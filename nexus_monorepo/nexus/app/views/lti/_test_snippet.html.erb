@@ -1,8 +1,11 @@
-<div>
+<div class="hidden">
   <div>
     Referrer: <%= @referrer %>
   </div>
   <div>
     Session: <%= @session_id.nil? ? 'null' : @session_id %>
+  </div>
+  <div>
+    LTI: <%= @is_lti %>
   </div>
 </div>

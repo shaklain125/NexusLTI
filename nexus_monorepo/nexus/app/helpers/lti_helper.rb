@@ -247,6 +247,10 @@ module LtiHelper
       get_token(params)[:tool_id]
     end
 
+    def get_user_id(params)
+      get_token(params)[:user_id]
+    end
+
     def get_token(params)
       _token = _get_token_param(params)
       token = decrypt_json(_token)

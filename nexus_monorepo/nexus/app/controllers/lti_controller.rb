@@ -27,17 +27,27 @@ class LtiController < ApplicationController
     @launch_id = @lti_launch.id
     @tool_id = @lti_launch.lti_tool_id
 
-    params[:lti_token] = LtiHelper.encrypt_json({
-                                                  tool_id: @tool_id,
-                                                  role: LtiHelper::LtiRole.new(@message.custom_params).as_json[:role]
-                                                })
+    token_data = {
+      tool_id: @tool_id,
+      role: LtiHelper::LtiRole.new(@message.custom_params).as_json[:role]
+    }
+
+    params[:lti_token] = LtiHelper.encrypt_json(token_data)
+
+    is_student = LtiHelper.verify_student(params)
+
+    user = create_user('student2@student.com', 'Student2') if is_student
+
+    params[:lti_token] = LtiHelper.encrypt_json(token_data.merge({ user_id: user.nil? ? nil : user.id }))
+
+    create_session(user)  if is_student
 
     # redirect_to root_path if current_user
 
     # redirect_to lti_home_path unless current_user
 
     if LtiHelper.verify_student(params)
-      redirect_to new_submission_path(aid: 1)
+      redirect_to new_submission_path(aid: 5)
       return
     end
 
@@ -48,11 +58,23 @@ class LtiController < ApplicationController
     redirect_to lti_home_path if current_user
   end
 
+  def create_user(email, name)
+    u = User.find_by_email(email)
+    u ||= User.create(email: email,
+                      password: '12345678',
+                      password_confirmation: '12345678',
+                      name: name)
+    u
+  end
+
+  def create_session(user)
+    session_exists = LtiSession.find_by_user_id(user.id)
+    LtiSession.create(lti_tool: LtiTool.find(LtiHelper.get_tool_id(params)), user: user) unless session_exists
+  end
+
   def login_post
     u = User.find_by_email(params[:user][:email])
     valid_user = u.valid_password?(params[:user][:password])
-
-    session_exists = LtiSession.find_by_user_id(u.id)
 
     validate_login = !valid_user || LtiHelper.invalid_token(params) || !@is_teacher
 
@@ -61,7 +83,11 @@ class LtiController < ApplicationController
       return
     end
 
-    LtiSession.create(lti_tool: LtiTool.find(LtiHelper.get_tool_id(params)), user: u) unless session_exists
+    create_session(u)
+
+    new_token = LtiHelper.get_token(params).merge({ user_id: u.id })
+
+    params[:lti_token] = LtiHelper.encrypt_json(new_token)
 
     redirect_to lti_home_path
   end

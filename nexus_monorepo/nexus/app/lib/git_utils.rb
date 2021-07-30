@@ -9,11 +9,11 @@ class GitUtils
     end
 
     def gen_branch_name(submission)
-      "submissions-u#{submission.user.uid}-l#{submission.user.ghe_login}"
+      "submissions-u#{submission.user.uid || submission.user.id}-l#{submission.user.ghe_login}"
     end
 
     def gen_commit_msg(submission)
-      "Submission via Nexus [sid #{submission.id} triggered by uid #{submission.user.uid} (#{submission.user.name})]"
+      "Submission via Nexus [sid #{submission.id} triggered by uid #{submission.user.uid || submission.user.id} (#{submission.user.name})]"
     end
 
     def init_gitobj(submission)
@@ -140,11 +140,11 @@ class GitUtils
       assignment.save!
 
       assignment.log("Created GHE repo for assignment (#{assignment.repourl})", 'success')
-      return true
+      true
     rescue StandardError => e
       Rails.logger.error "Error creating assignment repository for assignment #{assignment.id}, #{assignment.title}: #{e.inspect}"
       assignment.log("Error creating assignment repository: #{e.inspect}", 'Error')
-      return false
+      false
     end
 
     # Delete remote repository for the given assignment
@@ -177,12 +177,12 @@ class GitUtils
       end
 
       assignment.log("Successfully re-pushed submissions #{min_id}--#{max_id}.", 'success')
-      return true
+      true
     rescue StandardError => e
       Rails.logger.error("Couldn't re-push: #{e.inspect}.")
       assignment.log("Couldn't re-push submissions #{min_id}--#{max_id}: #{e.inspect}.", 'error')
 
-      return false
+      false
     end
 
     def valid_repo?(submission)
