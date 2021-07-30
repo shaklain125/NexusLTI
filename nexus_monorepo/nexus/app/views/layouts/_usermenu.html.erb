@@ -1,7 +1,7 @@
 <% if user_signed_in? %>
   <li class="dropdown">
     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-      <%= current_user.name %> <span class="caret"></span>
+      <%= current_user.name %> <% unless @is_lti %><span class="caret"></span><% end %>
     </a>
     <ul class="dropdown-menu">
       <% if current_user.ghe_profile_url %>
@@ -29,12 +29,15 @@
       <% if Rails.configuration.github_com_oauth_id || current_user.ghe_profile_url %>
         <li role="separator" class="divider"></li>
       <% end %>
-      <li><%= link_to(destroy_user_session_path) do %>
+      <% unless @is_lti %>
+        <li>
+          <%= link_to(destroy_user_session_path) do %>
             <%= icon 'sign-out' %> Logout</a>
-          <% end %>
+        <% end %>
       </li>
-    </ul>
-  </li>
+    <% end %>
+  </ul>
+</li>
 <% else %>
   <li>
     <%= link_to(user_omniauth_authorize_url(provider: :github)) do %>

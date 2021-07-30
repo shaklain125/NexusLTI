@@ -1,4 +1,5 @@
 require 'ims/lti'
+require 'ims/lis'
 class LtiController < ApplicationController
   include LtiHelper
 
@@ -26,30 +27,21 @@ class LtiController < ApplicationController
     @launch_id = @lti_launch.id
     @tool_id = @lti_launch.lti_tool_id
 
-    params[:lti_token] = LtiHelper.encrypt_json({ tool_id: @tool_id })
+    params[:lti_token] = LtiHelper.encrypt_json({
+                                                  tool_id: @tool_id,
+                                                  role: LtiHelper::LtiRole.new(@message.custom_params).as_json[:role]
+                                                })
 
     # redirect_to root_path if current_user
 
     # redirect_to lti_home_path unless current_user
 
+    if LtiHelper.verify_student(params)
+      redirect_to new_submission_path(aid: 1)
+      return
+    end
+
     redirect_to lti_home_path
-
-    # redirect_to edit_assignment_path(1)
-    # redirect_to lti_launch2_path
-    # render json: JSON.pretty_generate({
-    #                                     signed_in: user_signed_in?,
-    #                                     current_user: current_user.as_json
-    #                                   })
-  end
-
-  def launch2
-    # redirect_to lti_launch3_path
-    render json: JSON.pretty_generate({ params: params })
-    # render json: JSON.pretty_generate({ user: current_user.as_json })
-  end
-
-  def launch3
-    render json: JSON.pretty_generate({ user: current_user.as_json })
   end
 
   def login
@@ -62,7 +54,7 @@ class LtiController < ApplicationController
 
     session_exists = LtiSession.find_by_user_id(u.id)
 
-    validate_login = !valid_user || LtiHelper.invalid_token(params)
+    validate_login = !valid_user || LtiHelper.invalid_token(params) || !@is_teacher
 
     if validate_login
       redirect_to lti_login_path
@@ -77,7 +69,7 @@ class LtiController < ApplicationController
   def logout
     unless LtiHelper.invalid_token(params)
       lti_session = LtiSession.find_by_lti_tool_id(LtiHelper.get_tool_id(params))
-      lti_session.delete if lti_session
+      lti_session.delete if lti_session && @is_teacher
     end
     redirect_to lti_home_path
   end

@@ -117,10 +117,6 @@ Rails.application.routes.draw do
 
     get 'lti/configure', action: :configure, as: :lti_configure
     get 'lti/manage_assignment', action: :manage_assignment, as: :lti_manage_assignment
-
-    get 'lti/launch2', action: :launch2, as: :lti_launch2
-    get 'lti/launch3', action: :launch3, as: :lti_launch3
-
   end
 
   scope(controller: :lti_registration) do

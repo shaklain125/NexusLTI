@@ -28,6 +28,15 @@ class ApplicationController < ActionController::Base
 
   def lti_auth
     LtiHelper.invalid_token_raise(params)
+    @is_teacher = LtiHelper.verify_teacher(params)
+    @is_student = LtiHelper.verify_student(params)
+    LtiHelper::LtiRole.if_student_show_student_pages_raise(params, controller_name)
+    @referrer = request.referrer
+    @session_id = session[:session_id]
+    @is_lti = LtiHelper.contains_token_param(params)
+    LtiHelper.raise_if_null_referrer_and_lti(request, params)
+    LtiHelper.raise_if_session_and_lti(session, params)
+    LtiHelper::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
   end
 
   def configure_permitted_parameters

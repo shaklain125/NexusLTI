@@ -1,28 +1,26 @@
 <h1>LTI Launch - Home</h1>
-
-<% if user_signed_in? %>
-
-<div style="margin-bottom:1.5rem; margin-top:1.5rem">
-  <%= link_to(lti_logout_path) do %>
-      <button type="button" name="button" class="btn btn-sm btn-danger"><%= icon 'sign-in-alt' %>Log out</button>
+<% if @is_teacher %>
+  <% if user_signed_in? %>
+    <div style="margin-bottom:1.5rem; margin-top:1.5rem">
+      <%= link_to(lti_logout_path) do %>
+        <button type="button" name="button" class="btn btn-sm btn-danger"><%= icon 'sign-in-alt' %>Log out</button>
+      <% end %>
+    </div>
+  <% else %>
+    <div style="margin-bottom:1.5rem; margin-top:1.5rem">
+      <%= link_to(lti_login_path) do %>
+        <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'sign-in-alt' %> Log in</button>
+      <% end %>
+    </div>
   <% end %>
-</div>
-
-
-<% else %>
-
-<div style="margin-bottom:1.5rem; margin-top:1.5rem">
-  <%= link_to(lti_login_path) do %>
-      <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'sign-in-alt' %> Log in</button>
-  <% end %>
-</div>
-
-<% end %>
-
-<%= link_to(lti_configure_path) do %>
+  <%= link_to(lti_configure_path) do %>
     <button type="button" name="button" class="btn btn-sm btn-primary">Configure</button>
-<% end %>
-
-<%= link_to(lti_manage_assignment_path) do %>
+  <% end %>
+  <%= link_to(lti_manage_assignment_path) do %>
     <button type="button" name="button" class="btn btn-sm btn-primary">Manage Assignment</button>
+  <% end %>
+  <%# TESTING FOR STUDENT %>
+  <%= link_to(new_submission_path(aid: 1)) do %>
+    <button type="button" class="btn btn-success">Upload New Submission</button>
+  <% end %>
 <% end %>

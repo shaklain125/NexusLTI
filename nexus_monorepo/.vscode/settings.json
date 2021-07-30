@@ -4,7 +4,6 @@
     "**/*.md": true,
     "**/*.sh": true,
     "**/.svn": true,
-    "./**/log*": true,
     "**/*.docx": true,
     "**/*.pdf": true,
 
@@ -20,6 +19,7 @@
     "*tester*": true,
     "CVS": true,
     "peerfeedback": true,
+    "log*": true,
 
     "nexus/**/node_modules": true,
     "nexus/**/bin": true,
@@ -35,7 +35,11 @@
     "nexus/**/*-lock*": true,
     "nexus/**/*.lock": true,
     "nexus/**/migrate": false,
-    "nexus/**/*.sql*": true
+    "nexus/**/*.sql*": true,
+
+    "nexus/circle*": true,
+    "nexus/lib": false,
+    "nexus/log": true
   },
 
   "ruby.rubocop.executePath": "/home/shakl/.rbenv/shims/",
@@ -47,5 +51,18 @@
   "solargraph.commandPath": "/home/shakl/.rbenv/shims/solargraph",
   "solargraph.bundlerPath": "/home/shakl/.rbenv/shims/bundle",
   "solargraph.formatting": true,
-  "solargraph.autoformat": true
+  "solargraph.autoformat": true,
+
+  "emmet.includeLanguages": {
+    "erb": "html"
+  },
+
+  "[erb]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
+  },
+
+  "files.associations": {
+    "*.erb": "erb"
+  }
 }
