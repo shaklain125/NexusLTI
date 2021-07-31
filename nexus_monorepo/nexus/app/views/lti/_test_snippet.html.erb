@@ -1,4 +1,4 @@
-<div class="hidden">
+<div class="">
   <div>
     Referrer: <%= @referrer %>
   </div>
@@ -6,6 +6,20 @@
     Session: <%= @session_id.nil? ? 'null' : @session_id %>
   </div>
   <div>
-    LTI: <%= @is_lti %>
+    <div>
+      LTI: <%= @is_lti %>
+    </div>
+    <div>
+      Error: <%= @is_lti_error %>
+    </div>
+  </div>
+  <div>
+    Teacher: <%= @is_teacher %>
+  </div>
+  <div>
+    Student: <%= @is_student %>
+  </div>
+  <div>
+    Signed In: <%= user_signed_in? %>
   </div>
 </div>

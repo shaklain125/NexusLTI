@@ -4,7 +4,7 @@ module ApplicationHelper
   end
 
   def raise_if_lti_token(params)
-    LtiHelper.raise_if_contains_token(params)
+    LtiUtils.raise_if_contains_token(params)
   end
 
   def authenticate_can_administrate!(course)

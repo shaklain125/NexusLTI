@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+  include LtiHelper
   # Prevent CSRF attacks by raising an exception.
   # For APIs, you may want to use :null_session instead.
   # protect_from_forgery with: :exception
@@ -7,6 +8,7 @@ class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   before_action :lti_auth
+  skip_before_action :verify_authenticity_token, if: :lti_request?
 
   rescue_from LtiLaunch::Unauthorized do |ex|
     @error = "Authentication failed with: #{case ex.error
@@ -27,18 +29,40 @@ class ApplicationController < ActionController::Base
   protected
 
   def lti_auth
-    @is_lti = LtiHelper.contains_token_param(params)
     @referrer = request.referrer
     @session_id = session[:session_id]
-    @is_teacher = LtiHelper.verify_teacher(params)
-    @is_student = LtiHelper.verify_student(params)
-    @is_lti_error = true
-    LtiHelper.invalid_token_raise(params)
-    LtiHelper::LtiRole.if_student_show_student_pages_raise(params, controller_name)
-    LtiHelper.raise_if_null_referrer_and_lti(request, params)
-    LtiHelper.raise_if_session_and_lti(session, params)
-    LtiHelper::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
-    @is_lti_error = false
+
+    is_lms_referer = LtiUtils.check_if_referrer_is_not_lms(request, params)
+    student_ref_page = LtiUtils::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
+    teacher_ref_page = LtiUtils::LtiRole.if_teacher_and_referer_valid_raise(params, request, controller_name, action_name)
+    is_ref_page = (@is_teacher && teacher_ref_page) || (@is_student && student_ref_page)
+
+    unless is_ref_page
+      if cookies[:lti_token].nil?
+        LtiUtils.raise_if_not_cookie_token_present_and_lti(cookies) if @is_student
+      elsif params[:lti_token].nil?
+        params[:lti_token] = LtiUtils.get_cookie_token(cookies)
+      else
+        params.delete(:lti_token)
+      end
+    end
+
+    @is_lti = LtiUtils.contains_token_param(params)
+    @is_teacher = LtiUtils.verify_teacher(params)
+    @is_student = LtiUtils.verify_student(params)
+
+    validate_token unless is_lms_referer
+  end
+
+  def lti_request?
+    http_referer_uri = LtiUtils.http_referer_uri(request)
+    same_host_and_referrer = LtiUtils.check_host(request.referrer, [LtiUtils.get_host(request.headers['origin'])])
+    http_referer_and_host = http_referer_uri ? request.host == http_referer_uri.host : false
+    valid_methods = %w[POST PATCH].include?(request.method)
+    is_student = LtiUtils.verify_student(cookies)
+    is_teacher = LtiUtils.verify_teacher(cookies)
+    is_teacher_or_student = is_student || is_teacher
+    is_teacher_or_student && valid_methods && same_host_and_referrer && http_referer_and_host
   end
 
   def configure_permitted_parameters
@@ -54,9 +78,9 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user
-    unless LtiHelper.invalid_token(params)
-      return nil if @is_teacher && !LtiHelper.get_user_id(params)
-      lti_session = LtiSession.where({ lti_tool: LtiHelper.get_tool_id(params), user: LtiHelper.get_user_id(params) })
+    unless LtiUtils.invalid_token(params)
+      return nil if @is_teacher && !LtiUtils.get_user_id(params)
+      lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: LtiUtils.get_user_id(params) })
       return nil unless lti_session.any?
       return lti_session.first.user
     end
@@ -67,7 +91,7 @@ class ApplicationController < ActionController::Base
     # puts('DEFAULT PARAMS--------------------------------')
     # puts(action_name)
     # puts(params)
-    options[:lti_token] = params[:lti_token] unless LtiHelper.invalid_token(params)
+    # options[:lti_token] = params[:lti_token] unless LtiUtils.invalid_token(params)
     options
   end
 end
