@@ -1,19 +1,47 @@
-<h1>LTI - Manage Assignment</h1>
-
 <script>
-  function confirmDeletion() {
-    return confirm("This action will delete the assignment and all its submissions. Are you sure?");
-  }
+  const confirmDeletion = () =>
+    confirm('This action will delete the assignment and all its submissions. Are you sure?');
 </script>
-
-<%= link_to(new_assignment_path(cid: 1)) do %>
-    <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
-<% end %>
-
-<%= link_to(edit_assignment_path(id: 1)) do %>
-  <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'edit' %> Edit Assignment</button>
-<% end %>
-
-<%= link_to(delete_assignment_path(id: 5), onclick: 'return confirmDeletion()') do %>
-    <button type="button" class="btn btn-sm btn-danger"><%= icon 'times' %> Delete Assignment</button>
-<% end %>
+<div class="well">
+  <h2>LTI - Manage Assignment</h2>
+  <hr>
+  <h4><span style="font-weight:bold;">Name: </span> <%= @assignment.title %></h4>
+  <% if @assignment.started? %>
+    <h5><span style="font-weight:bold;">Started: </span><%= strftime_uk @assignment.start %></h5>
+    <h5><span style="font-weight:bold;">Deadline: </span><%= strftime_uk @assignment.deadline %>
+      <span class="label label-warning"><%= distance_from_now_string @assignment.deadline %></span>
+    </h5>
+  <% else %>
+    <h5><span style="font-weight:bold;">Starts: </span><%= strftime_uk @assignment.start %>
+      <span class="label label-info"><%= distance_from_now_string @assignment.start %></span>
+    </h5>
+    <h5><span style="font-weight:bold;">Deadline: </span><%= strftime_uk @assignment.deadline %> </h5>
+  <% end %>
+  <div class="row">
+    <div class="col-lg-10" style="margin-top:1.5rem; margin-bottom:1.5rem;">
+      <%= link_to(@assignment) do %>
+        <button type="button" name="button" class="btn btn-sm btn-info"><%= icon 'info-circle' %> View more details</button>
+      <% end %>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-10" style="margin-top:1.5rem; margin-bottom:1.5rem;">
+      <%= link_to(new_assignment_path(cid: @course.id)) do %>
+        <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
+      <% end %>
+      <%= link_to(edit_assignment_path(id: @assignment.id)) do %>
+        <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'edit' %> Edit Assignment</button>
+      <% end %>
+      <%= link_to(delete_assignment_path(id: @assignment.id), onclick: 'return confirmDeletion()') do %>
+        <button type="button" class="btn btn-sm btn-danger"><%= icon 'times' %> Delete Assignment</button>
+      <% end %>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-10" style="margin-top:1.5rem; margin-bottom:1.5rem;">
+      <%= link_to(lti_configure_path) do %>
+        <button type="button" name="button" class="btn btn-sm btn-success"><%= icon 'cog' %> Reconfigure LTI Assignment</button>
+      <% end %>
+    </div>
+  </div>
+</div>

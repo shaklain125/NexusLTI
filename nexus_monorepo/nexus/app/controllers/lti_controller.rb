@@ -5,7 +5,7 @@ class LtiController < ApplicationController
 
   before_filter :contains_token_param, except: [:launch]
   before_filter :lti_authentication, only: [:launch]
-  skip_before_filter :verify_authenticity_token, only: [:launch, :login_post]
+  skip_before_filter :verify_authenticity_token, only: [:launch, :login_post, :configure_generate]
 
   def contains_token_param
     LtiUtils.contains_token_param_raise(params)
@@ -27,35 +27,60 @@ class LtiController < ApplicationController
 
     @launch_id = @lti_launch.id
     @tool_id = @lti_launch.lti_tool_id
+    custom_params = @message.custom_params
+    custom = LtiUtils.no_prefix_custom(custom_params)
+    config = custom[:lti_config]
+    config = LtiUtils.decrypt_json(config)
 
     token_data = {
       tool_id: @tool_id,
-      role: LtiUtils::LtiRole.new(@message.custom_params).as_json[:role],
+      role: LtiUtils::LtiRole.new(custom_params).as_json[:role],
       ip_addr: request.remote_ip
     }
 
     params[:lti_token] = LtiUtils.encrypt_json(token_data)
 
     is_student = LtiUtils.verify_student(params)
+    is_teacher = LtiUtils.verify_teacher(params)
 
     user = create_user('student2@student.com', 'Student2') if is_student
 
-    params[:lti_token] = LtiUtils.encrypt_json(token_data.merge({ user_id: user.nil? ? nil : user.id }))
+    user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com'
 
-    create_session(user)  if is_student
+    create_session(user)  if is_student || is_teacher
 
-    LtiUtils.set_cookie_token(cookies, session, params[:lti_token]) # if is_ref_page && !LtiUtils.invalid_token(params)
+    LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
 
     # redirect_to root_path if current_user
 
     # redirect_to lti_home_path unless current_user
 
-    if LtiUtils.verify_student(params)
-      redirect_to new_submission_path(aid: 5)
+    aid_valid = config[:aid].nil? || config[:cid].nil? ? false : Assignment.where({ id: config[:aid], course: config[:cid] }).any?
+
+    if is_student
+      if aid_valid
+        LtiUtils.update_and_set_token(params, cookies, session, { submission: { aid: config[:aid] } })
+        redirect_to new_submission_path(aid: config[:aid])
+      else
+        raise LtiLaunch::Unauthorized, :invalid
+      end
+      return
+    elsif is_teacher
+      if aid_valid
+        LtiUtils.update_and_set_token(params, cookies, session, { config: { aid: config[:aid], cid: config[:cid] } })
+        redirect_to action: :manage_assignment
+      else
+        LtiUtils.update_and_set_token(params, cookies, session, { generator: true })
+        redirect_to action: :login
+      end
       return
     end
 
-    redirect_to lti_home_path
+    # redirect_to lti_home_path
+
+    redirect_to action: :configure
+
+    # render json: JSON.pretty_generate({ custom: config })
   end
 
   def launch2
@@ -83,6 +108,7 @@ class LtiController < ApplicationController
   end
 
   def create_session(user)
+    return nil unless user
     session_exists = LtiSession.where({ user: user.id })
     session_exists.delete_all if session_exists.any?
     LtiSession.create(lti_tool: LtiTool.find(LtiUtils.get_tool_id(params)), user: user)
@@ -91,19 +117,23 @@ class LtiController < ApplicationController
   def login_post
     u = User.find_by_email(params[:user][:email])
     valid_user = u.valid_password?(params[:user][:password])
+    is_admin = u && u.admin?
 
-    validate_login = !valid_user || LtiUtils.invalid_token(params) || !@is_teacher
+    validate_login = !valid_user || LtiUtils.invalid_token(params) || !@is_teacher || !is_admin
 
     if validate_login
-      redirect_to lti_login_path
+      redirect_to action: :login
       return
     end
 
     create_session(u)
 
-    params[:lti_token] = LtiUtils.encrypt_json(LtiUtils.update_user_id(params, u.id))
+    LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, u.id))
 
-    LtiUtils.set_cookie_token(cookies, session, params[:lti_token])
+    if LtiUtils.from_generator(params)
+      redirect_to action: :configure
+      return
+    end
 
     redirect_to lti_home_path
   end
@@ -114,9 +144,7 @@ class LtiController < ApplicationController
 
       lti_session.delete if lti_session && @is_teacher
 
-      params[:lti_token] = LtiUtils.encrypt_json(LtiUtils.update_user_id(params, nil))
-
-      LtiUtils.set_cookie_token(cookies, session, params[:lti_token])
+      LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, nil))
     end
 
     redirect_to lti_home_path
@@ -124,7 +152,29 @@ class LtiController < ApplicationController
 
   def index; end
 
-  def configure; end
+  def configure
+    redirect_to action: :login unless current_user
+  end
 
-  def manage_assignment; end
+  def configure_generate
+    aid = params[:assignment]
+    assignment = Assignment.find(aid)
+    cid = assignment.course.id unless assignment.nil?
+    u = current_user
+    render json: { config: u.nil? || cid.nil? ? 'Error' : LtiUtils.encrypt_json({ aid: aid, cid: cid, email: u.email }) }
+  rescue StandardError
+    render json: { config: 'Error' }
+  end
+
+  def manage_assignment
+    config = LtiUtils.get_config(params)
+    a_exists = Assignment.where({ id: config[:aid], course: config[:cid] })
+    unless a_exists.any?
+      LtiUtils.update_and_set_token(params, cookies, session, { generator: true, config: nil, user_id: nil })
+      redirect_to action: :login
+      return
+    end
+    @assignment = a_exists.first
+    @course = Course.find(config[:cid])
+  end
 end

@@ -1,0 +1,13 @@
+<% back_link = @is_manage_assignment ? lti_manage_assignment_path : nil %>
+<% back_link = @is_config_generator ? lti_configure_path : back_link %>
+<% back_link = @is_submission ? @submission_path : back_link %>
+<% unless back_link.nil? %>
+  <div style="margin-top:2rem; margin-bottom:2rem;">
+    <%= link_to(back_link) do %>
+      <button type="button" name="button" class="btn btn-sm btn-primary">
+        <%= icon 'arrow-left' %>
+        <span style="vertical-align: middle; margin-left:.5rem;">Go back to LTI home</span>
+      </button>
+    <% end %>
+  </div>
+<% end %>

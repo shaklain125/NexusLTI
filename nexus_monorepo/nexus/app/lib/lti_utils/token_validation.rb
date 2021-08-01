@@ -58,8 +58,37 @@ module LtiUtils
       get_token(params)[:ip_addr]
     end
 
+    def get_config(params)
+      get_token(params)[:config]
+    end
+
+    def get_submission_token(params)
+      get_token(params)[:submission]
+    end
+
+    def from_generator(params)
+      !get_token(params)[:generator].nil?
+    end
+
+    def from_manage_assignment(params)
+      !get_config(params).nil?
+    end
+
+    def from_submission(params)
+      !get_submission_token(params).nil?
+    end
+
     def update_user_id(params, id)
       get_token(params).merge({ user_id: id })
+    end
+
+    def update_merge_token(params, json)
+      get_token(params).merge(json)
+    end
+
+    def update_and_set_token(params, cookies, session, json)
+      params[:lti_token] = encrypt_json(update_merge_token(params, json))
+      set_cookie_token(cookies, session, params[:lti_token])
     end
 
     def get_token(params)

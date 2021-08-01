@@ -1,5 +1,130 @@
-<h1>LTI - Configuration</h1>
-
-<%= link_to(new_assignment_path(cid: 1)) do %>
-    <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
-<% end %>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-alerts@1.2.2/bootstrap-alerts.min.js"></script>
+<script>
+  $(document).ready(function () {
+    var req_busy = false;
+    var course_link = `<%= new_assignment_path(cid: ':id') %>`;
+  
+    const config_textarea = 'textarea#config';
+    const { a, c } = { a: 'select.assignment_select', c: 'select.course_select' };
+  
+    const clearSelection = () => {
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      } else if (document.selection) {
+        document.selection.empty();
+      }
+    };
+  
+    $('select').on('change', ({ target }) => {
+      const value = $(target).val();
+      const data = { assignment: $(a).val() };
+      const req = async () => {
+        if (req_busy) return;
+        req_busy = true;
+        try {
+          const resp = await axios.post('<%= lti_configure_generate_path %>', data);
+          const { config } = resp.data;
+          $(config_textarea).val(`lti_config=${config}`);
+        } catch (error) {
+          console.log('ERROR', error);
+        }
+        req_busy = false;
+      };
+      if (!isNaN(data.assignment)) {
+        req();
+      } else {
+        $(config_textarea).val('');
+      }
+    });
+  
+    $('button.clipboard_btn').on('click', () => {
+      const value = $(config_textarea).val();
+      if (value) {
+        $(config_textarea).select();
+        document.execCommand('copy');
+        clearSelection();
+        $('#clipboard_alert').html('');
+        $('#clipboard_alert').bootstrapAlert({
+          type: 'success',
+          dismissible: false,
+          message: `<%= icon 'check' %><span style="vertical-align: middle; margin-left:.5rem;"> Copied to clipboard</span>`,
+        });
+        setTimeout(() => {
+          $('#clipboard_alert').html('');
+        }, 5000);
+      }
+    });
+  
+    $('button.create_btn').on('click', () => {
+      const course = $(c).val();
+      if (!isNaN(course)) {
+        window.location.href = course_link.replace(':id', course);
+      } else {
+        $('#create_alert').html('');
+        $('#create_alert').bootstrapAlert({
+          type: 'danger',
+          dismissible: false,
+          message: `<%= icon 'exclamation-triangle' %><span style="vertical-align: middle; margin-left:.5rem;"> No course has been selected</span>`,
+        });
+        setTimeout(() => {
+          $('#create_alert').html('');
+        }, 5000);
+      }
+    });
+  });
+</script>
+<div class="well">
+  <h2>LTI - Configuration Generator</h2>
+  <hr>
+  <div class ="form-horizontal">
+    <div class="form-group">
+      <div class="col-lg-10">
+        <div class="row" style="display:flex; align-items:center; justify-content:space-between;">
+          <div class="col-md-12">
+            <select class="form-control course_select">
+              <option selected>Select a course</option>
+              <% current_user.my_courses.each do |c| %>
+                <option value="<%= c.id %>"><%= c.title %></option>
+              <% end %>
+            </select>
+          </div>
+          <div class="col-md-2" style="display: flex;justify-content: flex-end;padding-left: 0;margin-left: 0;">
+            <button type="button" name="button" class="btn btn-sm btn-primary create_btn"><%= icon 'plus-circle' %> Create Assignment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-lg-10" style="display: flex;align-items: center;justify-content: center;">
+        <div class="row" style="display:flex; align-items:center;">
+          <span style="">OR</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-lg-10">
+        <select class="form-control assignment_select">
+          <option selected>Select an Assignment</option>
+          <% current_user.assignments.started.each do |a| %>
+            <option value="<%= a.id %>"><%= "Course: #{a.course.title} #{'-'*5} #{a.title} #{'-'*5} Deadline: #{distance_from_now_string a.deadline}" %></option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="config" class="col-lg-2 control-label">Custom parameters generated</label>
+      <div class="col-lg-10">
+        <textarea id="config"  class="form-control" rows="3" style="max-width: 100%; resize:none" readonly></textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="col-lg-10">
+        <button type="button" name="button" class="btn btn-sm btn-success clipboard_btn"><%= icon 'clipboard' %> Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+  <div id="create_alert"></div>
+  <div id="clipboard_alert"></div>
+</div>

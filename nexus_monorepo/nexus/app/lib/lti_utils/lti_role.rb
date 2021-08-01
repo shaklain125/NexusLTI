@@ -1,5 +1,11 @@
 module LtiUtils
   class << self
+    def no_prefix_custom(params)
+      prefix = 'custom_'
+      params = params.map { |k, v| [k.starts_with?(prefix) ? k[prefix.length, k.length - 1] : k, v] }
+      HashHelper.snake_case_symbolize(params)
+    end
+
     def verify_student(params)
       LtiRole.verify_student(params)
     end
@@ -168,18 +174,12 @@ module LtiUtils
       private :_check_token, :_get_token
     end
 
-    def no_prefix_custom(params)
-      prefix = 'custom_'
-      params = params.map { |k, v| [k.starts_with?(prefix) ? k[prefix.length, k.length - 1] : k, v] }
-      HashHelper.snake_case_symbolize(params)
-    end
-
     def as_json
       roles = self.class.roles_json
 
       sys_roles = self.class.system_roles_json
 
-      custom = no_prefix_custom(@params)
+      custom = LtiUtils.no_prefix_custom(@params)
 
       role = custom[:membership_role].split(',')
 
@@ -193,7 +193,5 @@ module LtiUtils
 
       HashHelper.snake_case_symbolize(role_inf)
     end
-
-    private :no_prefix_custom
   end
 end

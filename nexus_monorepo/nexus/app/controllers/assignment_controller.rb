@@ -96,6 +96,16 @@ class AssignmentController < ApplicationController
         return
       end
 
+      if @is_config_generator || @is_manage_assignment
+        flash[:success] = "Assignment created"
+        if @is_manage_assignment
+          redirect_to lti_manage_assignment_path
+        else
+          redirect_to lti_configure_path
+        end
+        return
+      end
+
       if @assignment.marking_tools.configurable.any?
         redirect_to action: 'quick_config_confirm', id: @assignment.id
       else
@@ -139,6 +149,13 @@ class AssignmentController < ApplicationController
       else
         flash[:error] = 'Assignment was not deleted. Please try again'
       end
+
+      if @is_manage_assignment
+        LtiUtils.update_and_set_token(params, cookies, session, { generator: true, config: nil })
+        redirect_to lti_configure_path
+        return
+      end
+
       redirect_to course
     end
   end
