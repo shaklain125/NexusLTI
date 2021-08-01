@@ -8,7 +8,8 @@ module LtiHelper
     LtiUtils.invalid_token_raise(params)
     LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name)
     LtiUtils.raise_if_null_referrer_and_lti(request, params)
-    LtiUtils.raise_if_session_and_lti(session, params)
+    LtiUtils.raise_if_session_cookie_check_and_lti(cookies, session, request, params)
+    LtiUtils.raise_if_invalid_token_ip(request, params)
     @is_lti_error = false
   end
 

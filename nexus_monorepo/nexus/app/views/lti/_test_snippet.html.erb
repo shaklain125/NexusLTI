@@ -22,4 +22,13 @@
   <div>
     Signed In: <%= user_signed_in? %>
   </div>
+  <div>
+    https: <%= request.ssl? %>
+  </div>
+  <div>
+    LTI_HTTPS_SESSION: <%= LTI_HTTPS_SESSION %>
+  </div>
+  <div>
+    LTI_HTTP_SESSION: <%= LTI_HTTP_SESSION %>
+  </div>
 </div>

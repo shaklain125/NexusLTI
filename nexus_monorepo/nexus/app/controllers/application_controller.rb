@@ -38,10 +38,10 @@ class ApplicationController < ActionController::Base
     is_ref_page = (@is_teacher && teacher_ref_page) || (@is_student && student_ref_page)
 
     unless is_ref_page
-      if cookies[:lti_token].nil?
-        LtiUtils.raise_if_not_cookie_token_present_and_lti(cookies) if @is_student
+      if !LtiUtils.cookie_token_exists(cookies, session)
+        LtiUtils.raise_if_not_cookie_token_present_and_lti(cookies, session) if @is_student
       elsif params[:lti_token].nil?
-        params[:lti_token] = LtiUtils.get_cookie_token(cookies)
+        params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
       else
         params.delete(:lti_token)
       end

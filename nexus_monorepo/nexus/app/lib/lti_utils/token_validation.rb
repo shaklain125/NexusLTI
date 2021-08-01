@@ -17,53 +17,33 @@ module LtiUtils
       raise LtiLaunch::Unauthorized, :invalid if contains_token_param(params)
     end
 
-    def raise_if_null_referrer_and_lti(request, params)
-      referrer = request.referrer
-      raise LtiLaunch::Unauthorized, :invalid if !referrer && contains_token_param(params)
-    end
-
-    def raise_if_session_and_lti(session, params)
+    def raise_if_session_cookie_check_and_lti(cookies, session, request, params)
       id = session[:session_id]
-      raise LtiLaunch::Unauthorized, :invalid if id && contains_token_param(params)
+      session_token = session[:lti_token]
+      cookies_token = cookies[:lti_token]
+
+      is_https = request.ssl?
+
+      is_https_session = https_session_enabled && is_https
+      is_http_session = http_session_enabled && !is_https
+
+      is_https_session_valid = id && !session_token.nil? && cookies_token.nil?
+      is_http_session_valid = ((id && session_token.nil?) || !id) && !cookies_token.nil?
+
+      https_valid = (is_https_session && is_https_session_valid)
+      http_valid = (is_http_session && is_http_session_valid)
+
+      # raise LtiLaunch::Unauthorized, :invalid if id && contains_token_param(params)
+
+      is_valid_session = (https_valid || http_valid)
+
+      delete_cookie_token_not_session(cookies) if !http_valid || https_valid
+
+      raise LtiLaunch::Unauthorized, :invalid if contains_token_param(params) && !is_valid_session
     end
 
-    def raise_if_not_cookie_token_present_and_lti(cookies)
-      raise LtiLaunch::Unauthorized, :invalid unless LtiUtils.cookie_token_exists(cookies)
-    end
-
-    def check_if_referrer_is_not_lms(request, params)
-      referrer = request.referrer
-      origin = request.headers['origin']
-      return false if !referrer || !origin
-      valid_referrers = [
-        '192.168.1.81'
-      ]
-      referer_valid = check_host(referrer, valid_referrers)
-      origin_valid = check_host(origin, valid_referrers)
-      valid = referer_valid && origin_valid
-      return false if !valid && contains_token_param(params)
-      true
-    end
-
-    def http_referer_uri(request)
-      request.env["HTTP_REFERER"] && URI.parse(request.env["HTTP_REFERER"])
-    end
-
-    def check_host(url, hostnames)
-      hostnames.include?(get_host(url))
-    end
-
-    def get_host(uri)
-      return nil unless uri
-      begin
-        Uri.parse(uri).host
-      rescue StandardError
-        nil
-      end
-    end
-
-    def raise_if_referrer_is_not_lms(request, params)
-      raise LtiLaunch::Unauthorized, :invalid if check_if_referrer_is_not_lms(request, params)
+    def raise_if_not_cookie_token_present_and_lti(cookies, session)
+      raise LtiLaunch::Unauthorized, :invalid unless cookie_token_exists(cookies, session)
     end
 
     def get_tool_id(params)
@@ -72,6 +52,10 @@ module LtiUtils
 
     def get_user_id(params)
       get_token(params)[:user_id]
+    end
+
+    def get_token_ip(params)
+      get_token(params)[:ip_addr]
     end
 
     def update_user_id(params, id)
@@ -85,20 +69,32 @@ module LtiUtils
       token
     end
 
-    def get_cookie_token(cookies)
-      cookies[:lti_token]
+    def get_cookie_token(cookies, session)
+      if session[:session_id] && cookies[:lti_token].nil?
+        session[:lti_token]
+      else
+        cookies[:lti_token]
+      end
     end
 
-    def cookie_token_exists(cookies)
-      !get_cookie_token(cookies).nil?
+    def cookie_token_exists(cookies, session)
+      !get_cookie_token(cookies, session).nil?
     end
 
-    def delete_cookie_token(cookies)
-      delete_lti_cookie(cookies, :lti_token) if cookie_token_exists(cookies)
+    def delete_cookie_token(cookies, session)
+      delete_lti_cookie(cookies, :lti_token) if cookie_token_exists(cookies, session)
     end
 
-    def set_cookie_token(cookies, token_encrypted)
-      set_lti_cookie(cookies, :lti_token, token_encrypted)
+    def delete_cookie_token_not_session(cookies)
+      delete_lti_cookie(cookies, :lti_token) unless cookies[:lti_token].nil?
+    end
+
+    def set_cookie_token(cookies, session, token_encrypted)
+      if session[:session_id] && cookies[:lti_token].nil?
+        session[:lti_token] = token_encrypted
+      else
+        set_lti_cookie(cookies, :lti_token, token_encrypted)
+      end
     end
 
     def invalid_token(params)

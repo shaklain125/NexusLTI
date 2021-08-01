@@ -30,7 +30,8 @@ class LtiController < ApplicationController
 
     token_data = {
       tool_id: @tool_id,
-      role: LtiUtils::LtiRole.new(@message.custom_params).as_json[:role]
+      role: LtiUtils::LtiRole.new(@message.custom_params).as_json[:role],
+      ip_addr: request.remote_ip
     }
 
     params[:lti_token] = LtiUtils.encrypt_json(token_data)
@@ -43,7 +44,7 @@ class LtiController < ApplicationController
 
     create_session(user)  if is_student
 
-    LtiUtils.set_cookie_token(cookies, params[:lti_token]) # if is_ref_page && !LtiUtils.invalid_token(params)
+    LtiUtils.set_cookie_token(cookies, session, params[:lti_token]) # if is_ref_page && !LtiUtils.invalid_token(params)
 
     # redirect_to root_path if current_user
 
@@ -64,6 +65,8 @@ class LtiController < ApplicationController
 
   def launch3
     # render json: JSON.pretty_generate({ foo: cookies[:foo] })
+    # render json: JSON.pretty_generate({ sessions: session.as_json  })
+    render json: { https: request.ssl? }
   end
 
   def login
@@ -100,7 +103,7 @@ class LtiController < ApplicationController
 
     params[:lti_token] = LtiUtils.encrypt_json(LtiUtils.update_user_id(params, u.id))
 
-    LtiUtils.set_cookie_token(cookies, params[:lti_token])
+    LtiUtils.set_cookie_token(cookies, session, params[:lti_token])
 
     redirect_to lti_home_path
   end
@@ -113,7 +116,7 @@ class LtiController < ApplicationController
 
       params[:lti_token] = LtiUtils.encrypt_json(LtiUtils.update_user_id(params, nil))
 
-      LtiUtils.set_cookie_token(cookies, params[:lti_token])
+      LtiUtils.set_cookie_token(cookies, session, params[:lti_token])
     end
 
     redirect_to lti_home_path
