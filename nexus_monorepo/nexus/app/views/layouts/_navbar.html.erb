@@ -8,31 +8,34 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <%= link_to "Nexus", (@is_teacher && !@is_lti_error) || !@is_lti ? root_path : 'javascript:void(0)', class: "navbar-brand" %>
+      <% lti_nexus_logo_path = @is_lti_error ? @submission_path : 'javascript:void(0)' if @is_student  %>
+      <%= link_to "Nexus", lti_nexus_logo_path || root_path, class: "navbar-brand" %>
     </div>
-    <!-- Collect the nav links, forms, and other content for toggling -->
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
-          <%= render 'layouts/coursemenu' %>
-          <%= render 'layouts/assignmentmenu' %>
-        <% end %>
-        <% if (@is_student || @is_teacher || !@is_lti) && !@is_lti_error %>
-          <%= render 'layouts/submissionmenu' %>
-        <% end %>
-      </ul>
-      <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
-        <ul class="nav navbar-nav navbar-right">
-          <% if user_signed_in? && current_user.admin? %>
-            <li>
-              <%= link_to admin_panel_path do %>
-                <%= icon 'wrench' %> Admin Panel
-              <% end %>
-            </li>
+    <% if !@is_lti || @is_lti && !@is_lti_error  %>
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
+            <%= render 'layouts/coursemenu' %>
+            <%= render 'layouts/assignmentmenu' %>
           <% end %>
-          <%= render 'layouts/usermenu' %>
+          <% if (@is_student || @is_teacher || !@is_lti) && !@is_lti_error %>
+            <%= render 'layouts/submissionmenu' %>
+          <% end %>
         </ul>
-      <% end %>
-    </div>
+        <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
+          <ul class="nav navbar-nav navbar-right">
+            <% if user_signed_in? && current_user.admin? %>
+              <li>
+                <%= link_to admin_panel_path do %>
+                  <%= icon 'wrench' %> Admin Panel
+                <% end %>
+              </li>
+            <% end %>
+            <%= render 'layouts/usermenu' %>
+          </ul>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </nav>

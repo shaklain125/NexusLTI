@@ -23,5 +23,10 @@ module LtiUtils
       uri.query = URI.encode_www_form(params)
       uri.to_s
     end
+
+    def check_if_mobile_user_agent(request)
+      mobile = request.user_agent =~ /Mobile|webOS/
+      !mobile.nil?
+    end
   end
 end

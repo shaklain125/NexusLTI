@@ -11,6 +11,7 @@ class ApplicationController < ActionController::Base
   skip_before_action :verify_authenticity_token, if: :lti_request?
 
   rescue_from LtiLaunch::Unauthorized do |ex|
+    @is_lti_error = true
     @error = "Authentication failed with: #{case ex.error
                                             when :invalid_signature
                                               'The OAuth Signature was Invalid'
@@ -51,9 +52,6 @@ class ApplicationController < ActionController::Base
   end
 
   def default_url_options(options = {})
-    # puts('DEFAULT PARAMS--------------------------------')
-    # puts(action_name)
-    # puts(params)
     # options[:lti_token] = params[:lti_token] unless LtiUtils.invalid_token(params)
     options
   end

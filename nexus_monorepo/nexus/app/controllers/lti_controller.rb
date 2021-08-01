@@ -31,6 +31,7 @@ class LtiController < ApplicationController
     custom = LtiUtils.no_prefix_custom(custom_params)
     config = custom[:lti_config]
     config = LtiUtils.decrypt_json(config)
+    person = { email: custom[:person_email_primary], name: custom[:person_name_full] }
 
     token_data = {
       tool_id: @tool_id,
@@ -43,17 +44,13 @@ class LtiController < ApplicationController
     is_student = LtiUtils.verify_student(params)
     is_teacher = LtiUtils.verify_teacher(params)
 
-    user = create_user('student2@student.com', 'Student2') if is_student
+    user = create_user('student2@student.com', 'Student2') if is_student # || is_teacher person[:email], person[:name]
 
-    user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com'
+    user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com' person[:email]
 
     create_session(user)  if is_student || is_teacher
 
     LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
-
-    # redirect_to root_path if current_user
-
-    # redirect_to lti_home_path unless current_user
 
     aid_valid = config[:aid].nil? || config[:cid].nil? ? false : Assignment.where({ id: config[:aid], course: config[:cid] }).any?
 
@@ -76,16 +73,12 @@ class LtiController < ApplicationController
       return
     end
 
-    # redirect_to lti_home_path
-
-    redirect_to action: :configure
-
-    # render json: JSON.pretty_generate({ custom: config })
+    redirect_to lti_home_path
   end
 
   def launch2
     # LtiUtils.set_lti_cookie(cookies, :foo, 'bar')
-    redirect_to lti_launch3_path
+    redirect_to action :launch3
   end
 
   def launch3
@@ -95,7 +88,7 @@ class LtiController < ApplicationController
   end
 
   def login
-    redirect_to lti_home_path if current_user
+    redirect_to action: :configure if current_user
   end
 
   def create_user(email, name)

@@ -6,6 +6,7 @@ module LtiUtils
   require_dependency 'lti_utils/cookie_helper'
   require_dependency 'lti_utils/uri_helper'
   require_dependency 'lti_utils/origin_checker'
+  require_dependency 'lti_utils/token_io'
 
   class << self
     def version

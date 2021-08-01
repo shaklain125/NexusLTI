@@ -6,6 +6,22 @@ module LtiUtils
       HashHelper.snake_case_symbolize(params)
     end
 
+    def no_prefix_custom_sub(params)
+      prefix = 'custom_'
+      custom = {}
+      params = params.map do |k, v|
+        if k.starts_with?(prefix)
+          custom[k[prefix.length, k.length - 1]] = v
+          [k, nil]
+        else
+          [k, v]
+        end
+      end
+      params = params.to_h.compact
+      params[:custom] = custom
+      HashHelper.snake_case_symbolize(params)
+    end
+
     def verify_student(params)
       LtiRole.verify_student(params)
     end
