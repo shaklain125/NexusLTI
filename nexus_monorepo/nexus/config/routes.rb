@@ -2,9 +2,9 @@ Rails.application.routes.draw do
   ### Devise
   devise_for :users, skip: [:sessions, :registrations], controllers: { omniauth_callbacks: 'callbacks' }
   devise_scope :user do
-    get 'users/login' => 'devise/sessions#new', as: :new_user_session
-    get 'users/logout' => 'devise/sessions#destroy', as: :destroy_user_session
-    post 'users/login' => 'devise/sessions#create', as: :user_session
+    get 'users/login' => 'sessions#new', as: :new_user_session
+    get 'users/logout' => 'sessions#destroy', as: :destroy_user_session
+    post 'users/login' => 'sessions#create', as: :user_session
   end
 
   ### Users

@@ -28,43 +28,6 @@ class ApplicationController < ActionController::Base
 
   protected
 
-  def lti_auth
-    @referrer = request.referrer
-    @session_id = session[:session_id]
-
-    is_lms_referer = LtiUtils.check_if_referrer_is_not_lms(request, params)
-    student_ref_page = LtiUtils::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
-    teacher_ref_page = LtiUtils::LtiRole.if_teacher_and_referer_valid_raise(params, request, controller_name, action_name)
-    is_ref_page = (@is_teacher && teacher_ref_page) || (@is_student && student_ref_page)
-
-    unless is_ref_page
-      if !LtiUtils.cookie_token_exists(cookies, session)
-        LtiUtils.raise_if_not_cookie_token_present_and_lti(cookies, session) if @is_student
-      elsif params[:lti_token].nil?
-        params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
-      else
-        params.delete(:lti_token)
-      end
-    end
-
-    @is_lti = LtiUtils.contains_token_param(params)
-    @is_teacher = LtiUtils.verify_teacher(params)
-    @is_student = LtiUtils.verify_student(params)
-
-    validate_token unless is_lms_referer
-  end
-
-  def lti_request?
-    http_referer_uri = LtiUtils.http_referer_uri(request)
-    same_host_and_referrer = LtiUtils.check_host(request.referrer, [LtiUtils.get_host(request.headers['origin'])])
-    http_referer_and_host = http_referer_uri ? request.host == http_referer_uri.host : false
-    valid_methods = %w[POST PATCH].include?(request.method)
-    is_student = LtiUtils.verify_student(cookies)
-    is_teacher = LtiUtils.verify_teacher(cookies)
-    is_teacher_or_student = is_student || is_teacher
-    is_teacher_or_student && valid_methods && same_host_and_referrer && http_referer_and_host
-  end
-
   def configure_permitted_parameters
     devise_parameter_sanitizer.for(:sign_up) do |u|
       u.permit(:email, :first_name, :last_name, :student_id, :password, :password_confirmation)

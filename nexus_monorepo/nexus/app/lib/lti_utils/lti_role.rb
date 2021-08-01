@@ -11,6 +11,15 @@ module LtiUtils
     def teacher_can_administrate(params)
       LtiRole.teacher_can_administrate(params)
     end
+
+    def invalidate_devise_non_admin_login(params)
+      if params[:user] && params[:user][:email]
+        u = User.find_by_email(params[:user][:email])
+        is_admin = u && u.admin?
+        return u unless is_admin
+      end
+      nil
+    end
   end
 
   class LtiRole
