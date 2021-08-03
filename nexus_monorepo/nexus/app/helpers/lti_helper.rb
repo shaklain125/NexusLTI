@@ -1,9 +1,23 @@
 module LtiHelper
-  class << self
-    def test; end
+  def handle_lti_error(ex)
+    @is_lti_error = true
+    @error = "Authentication failed with: #{case ex.error
+                                            when :invalid_signature
+                                              'The OAuth Signature was Invalid'
+                                            when :invalid_nonce
+                                              'The nonce has already been used'
+                                            when :request_to_old
+                                              'The request is to old'
+                                            else
+                                              'Unknown Error'
+                                            end}"
+    @message = LtiUtils.models.generate_message(request.request_parameters)
+    @header = SimpleOAuth::Header.new(:post, request.url, @message.post_params, consumer_key: @message.oauth_consumer_key, consumer_secret: 'secret', callback: 'about:blank')
+    render "lti/launch_error", status: 200
   end
 
   def lti_auth
+    return if controller_name.to_sym == :lti_registration
     @is_lti_error = false
     @referrer = request.referrer
     @session_id = session[:session_id]
@@ -36,6 +50,7 @@ module LtiHelper
   end
 
   def lti_request?
+    return if controller_name.to_sym == :lti_registration
     http_referer_uri = LtiUtils.http_referer_uri(request)
     same_host_and_referrer = LtiUtils.check_host(request.referrer, [LtiUtils.get_host(request.headers['origin'])])
     http_referer_and_host = http_referer_uri ? request.host == http_referer_uri.host : false
@@ -65,41 +80,43 @@ module LtiHelper
     raise LtiLaunch::Unauthorized, :invalid if !valid && LtiUtils.contains_token_param(params)
   end
 
+  # ------------------LTI Session----------------------- #
+
+  def create_teacher(email, name)
+    u = User.find_by_email(email)
+    u ||= User.create(email: email,
+                      password: '12345678',
+                      password_confirmation: '12345678',
+                      name: name,
+                      admin: true)
+    u
+  end
+
+  def create_student(email, name)
+    u = User.find_by_email(email)
+    u ||= User.create(email: email,
+                      password: '12345678',
+                      password_confirmation: '12345678',
+                      name: name)
+    u
+  end
+
+  def create_session(user)
+    return nil unless user
+    session_exists = LtiSession.where({ user: user.id })
+    session_exists.delete_all if session_exists.any?
+    LtiSession.create(lti_tool: LtiTool.find(LtiUtils.get_tool_id(params)), user: user)
+  end
+
   # ------------------LTI LAUNCH----------------------- #
 
   def parsed_lti_message(request)
-    lti_message = IMS::LTI::Models::Messages::Message.generate(request.request_parameters)
+    lti_message = LtiUtils.models.generate_message(request.request_parameters)
     lti_message.launch_url = request.url
     lti_message
   end
 
   def lti_authentication
     @lti_launch = LtiLaunch.check_launch(parsed_lti_message(request))
-  end
-
-  # ------------------LTI REG----------------------- #
-
-  def disable_xframe_header
-    response.headers.except! 'X-Frame-Options'
-  end
-
-  def registration_request
-    registration_request = IMS::LTI::Models::Messages::Message.generate(params)
-    @registration = LtiRegistration.new(
-      registration_request_params: registration_request.post_params,
-      tool_proxy_json: LtiToolProxyRegistration.new(registration_request, self).tool_proxy.as_json
-    )
-    @registration.save!
-  end
-
-  def register_proxy(registration)
-    LtiToolProxyRegistration.register(registration, self)
-  end
-
-  def redirect_to_consumer(registration_result)
-    url = registration_result[:return_url]
-    url = LtiUtils.add_param(url, 'tool_proxy_guid', registration_result[:tool_proxy_uuid])
-    url = LtiUtils.add_param(url, 'status', registration_result[:status] == 'success' ? 'success' : 'error')
-    redirect_to url
   end
 end

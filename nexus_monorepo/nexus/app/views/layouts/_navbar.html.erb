@@ -9,21 +9,23 @@
         <span class="icon-bar"></span>
       </button>
       <% lti_nexus_logo_path = @is_lti_error ? @submission_path : 'javascript:void(0)' if @is_student  %>
+      <% lti_nexus_logo_path = @is_lti_reg ? 'javascript:void(0)' : lti_nexus_logo_path %>
       <%= link_to "Nexus", lti_nexus_logo_path || root_path, class: "navbar-brand" %>
     </div>
-    <% if !@is_lti || @is_lti && !@is_lti_error  %>
+    <% if !@is_lti || @is_lti && !@is_lti_error || !@is_lti_reg_error || !@is_lti_reg  %>
+      <% except_cond = !@is_lti_error && !@is_lti_reg_error && !@is_lti_reg %>
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
-          <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
+          <% if (@is_teacher || !@is_lti) && except_cond %>
             <%= render 'layouts/coursemenu' %>
             <%= render 'layouts/assignmentmenu' %>
           <% end %>
-          <% if (@is_student || @is_teacher || !@is_lti) && !@is_lti_error %>
+          <% if (@is_student || @is_teacher || !@is_lti) && except_cond %>
             <%= render 'layouts/submissionmenu' %>
           <% end %>
         </ul>
-        <% if (@is_teacher || !@is_lti) && !@is_lti_error %>
+        <% if (@is_teacher || !@is_lti) && except_cond %>
           <ul class="nav navbar-nav navbar-right">
             <% if user_signed_in? && current_user.admin? %>
               <li>

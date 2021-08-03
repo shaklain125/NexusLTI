@@ -100,23 +100,18 @@ Rails.application.routes.draw do
 
   ### LTI
   scope(controller: :lti) do
-    Rails.application.routes.draw do
-      LTI_RESOURCE_HANDLERS.each do |config|
-        config[:messages].each do |message|
-          route = message[:route].symbolize_keys
-          path = route.delete(:path) || ':controller/:action'
-          post "lti/message/#{path}", route
-        end
+    LTI_RESOURCE_HANDLERS.each do |config|
+      config[:messages].each do |message|
+        route = message[:route].symbolize_keys
+        path = route.delete(:path) || ':controller/:action'
+        post "lti/message/#{path}", route
       end
     end
 
     get 'lti/index', action: :index, as: :lti_home
     get 'lti/login', action: :login, as: :lti_login
-    post 'lti/login', action: :login_post, as: :login_post
+    post 'lti/login', action: :login_post, as: :lti_login_post
     get 'lti/logout', action: :logout, as: :lti_logout
-
-    get 'lti/launch2', action: :launch2, as: :lti_launch2
-    get 'lti/launch3', action: :launch3, as: :lti_launch3
 
     get 'lti/configure', action: :configure, as: :lti_configure
     post 'lti/configure/generate', action: :configure_generate, as: :lti_configure_generate
@@ -125,9 +120,10 @@ Rails.application.routes.draw do
 
   scope(controller: :lti_registration) do
     post 'lti/register', action: :register, as: :lti_registration
+    post 'lti/auto_register', action: :auto_register, as: :lti_auto_registration
     post 'lti/submit_capabilities', action: :save_capabilities, as: :lti_save_capabilities
     get 'lti/submit_proxy/:registration_uuid', action: :submit_proxy, as: :lti_submit_proxy
-    get 'lti/tool_proxy/:tool_proxy_id', action: :show, as: :show_tool
+    get 'lti/tool_proxy/:tool_proxy_id', action: :show, as: :lti_show_tool
   end
 
   ### Root

@@ -7,6 +7,7 @@ module LtiUtils
   require_dependency 'lti_utils/uri_helper'
   require_dependency 'lti_utils/origin_checker'
   require_dependency 'lti_utils/token_io'
+  require_dependency 'lti_utils/ims_helper'
 
   class << self
     def version

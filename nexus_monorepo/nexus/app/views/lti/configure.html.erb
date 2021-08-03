@@ -17,7 +17,7 @@
       }
     };
   
-    $('select').on('change', ({ target }) => {
+    $(a).on('change', ({ target }) => {
       const value = $(target).val();
       const data = { assignment: $(a).val() };
       const req = async () => {

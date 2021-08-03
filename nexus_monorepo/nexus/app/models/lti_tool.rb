@@ -5,6 +5,6 @@ class LtiTool < ActiveRecord::Base
   has_many :lti_registrations
 
   def tool_proxy
-    IMS::LTI::Models::ToolProxy.from_json(tool_settings)
+    LtiUtils.models_all::ToolProxy.from_json(tool_settings)
   end
 end

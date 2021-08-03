@@ -3,9 +3,9 @@ require 'ims/lis'
 class LtiController < ApplicationController
   include LtiHelper
 
-  before_filter :contains_token_param, except: [:launch]
-  before_filter :lti_authentication, only: [:launch]
-  skip_before_filter :verify_authenticity_token, only: [:launch, :login_post, :configure_generate]
+  before_action :contains_token_param, except: [:launch]
+  before_action :lti_authentication, only: [:launch]
+  skip_before_action :verify_authenticity_token, only: [:launch, :login_post, :configure_generate]
 
   def contains_token_param
     LtiUtils.contains_token_param_raise(params)
@@ -14,15 +14,8 @@ class LtiController < ApplicationController
   def launch
     tool = LtiTool.find(@lti_launch.lti_tool_id)
     @secret = "&#{tool.shared_secret}"
-    @message = (@lti_launch && @lti_launch.message) || IMS::LTI::Models::Messages::Message.generate(request.request_parameters)
+    @message = (@lti_launch && @lti_launch.message) || LtiUtils.models.generate_message(request.request_parameters)
     @header = SimpleOAuth::Header.new(:post, request.url, @message.post_params, consumer_key: @message.oauth_consumer_key, consumer_secret: 'secret', callback: 'about:blank')
-
-    # render json: JSON.pretty_generate({ 'launch' => { 'message' => @message, 'secret' => @secret, 'header' => @header } })
-    # render json: JSON.pretty_generate({ 'launch' => {
-    #                                     'params' => params,
-    #                                     'lti_launch' => @lti_launch.as_json,
-    #                                     'lti_tool' => tool.as_json
-    #                                   } })
     # render json: JSON.pretty_generate({ launch: params })
 
     @launch_id = @lti_launch.id
@@ -44,9 +37,9 @@ class LtiController < ApplicationController
     is_student = LtiUtils.verify_student(params)
     is_teacher = LtiUtils.verify_teacher(params)
 
-    user = create_user('student2@student.com', 'Student2') if is_student # || is_teacher person[:email], person[:name]
+    user = create_student('student2@student.com', 'Student2') if is_student # create_student(person[:email], person[:name])
 
-    user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com' person[:email]
+    user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com' person[:email] -- create_teacher(person[:email], person[:name])
 
     create_session(user)  if is_student || is_teacher
 
@@ -76,35 +69,8 @@ class LtiController < ApplicationController
     redirect_to lti_home_path
   end
 
-  def launch2
-    # LtiUtils.set_lti_cookie(cookies, :foo, 'bar')
-    redirect_to action :launch3
-  end
-
-  def launch3
-    # render json: JSON.pretty_generate({ foo: cookies[:foo] })
-    # render json: JSON.pretty_generate({ sessions: session.as_json  })
-    render json: { https: request.ssl? }
-  end
-
   def login
     redirect_to action: :configure if current_user
-  end
-
-  def create_user(email, name)
-    u = User.find_by_email(email)
-    u ||= User.create(email: email,
-                      password: '12345678',
-                      password_confirmation: '12345678',
-                      name: name)
-    u
-  end
-
-  def create_session(user)
-    return nil unless user
-    session_exists = LtiSession.where({ user: user.id })
-    session_exists.delete_all if session_exists.any?
-    LtiSession.create(lti_tool: LtiTool.find(LtiUtils.get_tool_id(params)), user: user)
   end
 
   def login_post
