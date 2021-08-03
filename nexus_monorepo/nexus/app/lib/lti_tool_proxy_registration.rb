@@ -1,14 +1,11 @@
 class LtiToolProxyRegistration
-  attr_reader :tool_consumer_profile, :registration_state, :return_url
+  attr_reader :tool_consumer_profile
 
   attr_writer :shared_secret, :tool_proxy, :tool_profile, :security_contract, :product_instance, :resource_handlers
 
   def initialize(registration_request, controller)
     @controller = controller
-    @return_url = registration_request.launch_presentation_return_url
-    @registration_service = LtiUtils.services.new_tp_reg_service(registration_request)
-    @tool_consumer_profile = @registration_service.tool_consumer_profile
-    @registration_state = :not_registered
+    @tool_consumer_profile = LtiUtils.services.new_tp_reg_service(registration_request).tool_consumer_profile
   end
 
   def shared_secret
@@ -66,30 +63,36 @@ class LtiToolProxyRegistration
   end
 
   def self.register(registration, controller)
-    registration_request = registration.registration_request
-
     raise LtiRegistration::Error, :already_registered if registration.workflow_state == :registered
 
-    registration_service = LtiUtils.services.new_tp_reg_service(registration_request)
     tool_proxy = registration.tool_proxy
-    return_url = registration.registration_request.launch_presentation_return_url
+    registration_request = registration.registration_request
+    return_url = registration_request.launch_presentation_return_url
 
-    registered_proxy = registration_service.register_tool_proxy(tool_proxy)
-    tool_proxy.tool_proxy_guid = registered_proxy.tool_proxy_guid
-    tool_proxy.id = controller.lti_show_tool_url(registered_proxy.tool_proxy_guid)
+    registered_proxy = LtiUtils.services.new_tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
+    tool_proxy_guid = registered_proxy.tool_proxy_guid
 
+    tool_proxy.id = controller.lti_show_tool_url(tool_proxy_guid)
+    tool_proxy.tool_proxy_guid = tool_proxy_guid
+
+    tp_sc = tool_proxy.security_contract
     tc_half_secret = registered_proxy.tc_half_shared_secret
-    tp_sc_half_secret = tool_proxy.security_contract.tp_half_shared_secret
-    tp_sc_secret = tool_proxy.security_contract.shared_secret
+    tp_sc_half_secret = tp_sc.tp_half_shared_secret
+    tp_sc_secret = tp_sc.shared_secret
 
     shared_secret = tc_half_secret ? tc_half_secret + tp_sc_half_secret : tp_sc_secret
 
-    tp = LtiTool.create!(shared_secret: shared_secret, uuid: registered_proxy.tool_proxy_guid, tool_settings: tool_proxy.as_json, lti_version: tool_proxy.lti_version)
+    tp = LtiTool.create!(
+      uuid: tool_proxy_guid,
+      shared_secret: shared_secret,
+      tool_settings: tool_proxy.as_json,
+      lti_version: tool_proxy.lti_version
+    )
 
     registration.update(workflow_state: 'registered', lti_tool: tp)
 
     {
-      tool_proxy_uuid: tool_proxy.tool_proxy_guid,
+      tool_proxy_uuid: tool_proxy_guid,
       return_url: return_url,
       status: 'success'
     }

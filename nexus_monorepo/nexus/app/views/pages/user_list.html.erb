@@ -1,11 +1,11 @@
 <div class="page-header">
   <h2>User List</h2>
 </div>
-
 <table class="table table-hover">
   <thead>
     <tr>
       <th>Name</th>
+      <th>id</th>
       <th>uid</th>
       <th>GHE login</th>
       <th>Email</th>
@@ -17,6 +17,7 @@
     <% @users.each do |user| %>
       <tr>
         <th scope="row"><%= user.name %></th>
+        <td><%= user.id %></td>
         <td><%= user.uid %></td>
         <td><%= user.ghe_login %></td>
         <td><%= user.email %></td>
