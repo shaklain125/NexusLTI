@@ -26,6 +26,14 @@ module LtiUtils
       def new_tp_reg_service(registration_request)
         LtiUtils.services_all::ToolProxyRegistrationService.new(registration_request)
       end
+
+      def get_tc_profile_from_tp_reg_service(registration_request)
+        new_tp_reg_service(registration_request).tool_consumer_profile
+      end
+
+      def register_tool_proxy(registration_request, tool_proxy)
+        new_tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
+      end
     end
   end
 

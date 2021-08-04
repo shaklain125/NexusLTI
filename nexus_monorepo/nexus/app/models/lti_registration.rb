@@ -5,7 +5,7 @@ class LtiRegistration < ActiveRecord::Base
   belongs_to :lti_tool
 
   def registration_request
-    @registration_request ||= LtiUtils.models_all::Messages::Message.generate(registration_request_params)
+    @registration_request ||= LtiUtils.models.generate_message(registration_request_params)
   end
 
   def tool_proxy
@@ -13,7 +13,7 @@ class LtiRegistration < ActiveRecord::Base
   end
 
   def tool_consumer_profile
-    @tool_consumer_profile ||= LtiUtils.services.new_tp_reg_service(registration_request).tool_consumer_profile
+    @tool_consumer_profile ||= LtiUtils.services.get_tc_profile_from_tp_reg_service(registration_request)
   end
 
   class Error < StandardError

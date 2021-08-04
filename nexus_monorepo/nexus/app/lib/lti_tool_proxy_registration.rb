@@ -5,7 +5,7 @@ class LtiToolProxyRegistration
 
   def initialize(registration_request, controller)
     @controller = controller
-    @tool_consumer_profile = LtiUtils.services.new_tp_reg_service(registration_request).tool_consumer_profile
+    @tool_consumer_profile = LtiUtils.services.get_tc_profile_from_tp_reg_service(registration_request)
   end
 
   def shared_secret
@@ -46,7 +46,10 @@ class LtiToolProxyRegistration
     unless @product_instance
       product_instance_config = Rails.root.join('config', 'lti', 'product_instance.json')
       raise LtiRegistration::Error, :missing_product_instance unless File.exist? product_instance_config
-      @product_instance = LtiUtils.models_all::ProductInstance.new.from_json(File.read(product_instance_config))
+      pr_json = File.read(product_instance_config)
+      pr_json = JSON.parse(pr_json)
+      pr_json.delete('$schema') if pr_json['$schema']
+      @product_instance = LtiUtils.models_all::ProductInstance.new.from_json(pr_json)
     end
   end
 
@@ -69,7 +72,7 @@ class LtiToolProxyRegistration
     registration_request = registration.registration_request
     return_url = registration_request.launch_presentation_return_url
 
-    registered_proxy = LtiUtils.services.new_tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
+    registered_proxy = LtiUtils.services.register_tool_proxy(registration_request, tool_proxy)
     tool_proxy_guid = registered_proxy.tool_proxy_guid
 
     tool_proxy.id = controller.lti_show_tool_url(tool_proxy_guid)
@@ -121,23 +124,8 @@ class LtiToolProxyRegistration
           host: @controller.request.host_with_port,
           controller: m['route']['controller'],
           action: m['route']['action']
-        ),
-        parameter: parameters(m['parameters']),
-        enabled_capability: capabilities(m)
+        )
       }
     end
-  end
-
-  def parameters(params)
-    (params || []).map do |p|
-      LtiUtils.models_all::Parameter.new(p.symbolize_keys)
-    end
-  end
-
-  def capabilities(message)
-    req_capabilities = message['required_capabilities'] || []
-    opt_capabilities = message['optional_capabilities'] || []
-    raise LtiRegistration::Error, :unsupported_capabilities_error unless (req_capabilities - (tool_consumer_profile.capability_offered || [])).empty?
-    req_capabilities + opt_capabilities
   end
 end

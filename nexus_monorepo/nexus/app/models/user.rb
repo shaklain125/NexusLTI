@@ -35,6 +35,7 @@ class User < ActiveRecord::Base
   has_many :assignments, through: :courses
   has_many :submissions
   has_many :audit_items
+  has_many :lti_sessions, dependent: :destroy
 
   after_create do
     log("User id #{id} (uid #{uid}) '#{name}' created.")

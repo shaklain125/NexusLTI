@@ -1,4 +1,5 @@
 {
+  "$schema": "./schema/product_instance.json",
   "guid": "baf196ff-2707-4ea3-9ad7-713db8e6f740",
   "product_info": {
     "product_version": "1.0",

@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Source: https://www.imsglobal.org/lti/model/mediatype/application/vnd/ims/lti/v2/toolproxy+json/index.html",
+  "properties": {
+    "guid": {
+      "type": "string",
+      "description": "A globally unique identifier for the service provider. As a best practice, this value should match an Internet domain name assigned by ICANN, but any globally unique identifier is acceptable."
+    },
+    "product_info": {
+      "type": "object",
+      "description": "This is metadata about the product described in the profile.",
+      "properties": {
+        "product_name": {
+          "type": "object",
+          "description": "A name for the product, suitable for display to end users.",
+          "properties": {
+            "default_value": {
+              "type": "string",
+              "description": "The default value for the display name. This value is used if (1) the key attribute is undefined, (2) the localization capability is not enabled, or (3) a value for the specified key is not found in the locale-specific resource bundle."
+            },
+            "key": {
+              "type": "string",
+              "description": "The key used to lookup the locale-specific value from a resource bundle."
+            }
+          }
+        },
+        "description": {
+          "type": "object",
+          "description": "This is a description of the product suitable for display to end-users.",
+          "properties": {
+            "default_value": {
+              "type": "string",
+              "description": "This is the default value for the text. This default value is used if (1) the key is not specified, (2) the localization capability is not enabled, or (3) the specified key is not found in the locale-specific resource bundle."
+            },
+            "key": {
+              "type": "string",
+              "description": "If localization is supported then the key identifies a property in the bundle returned by the get-bundle-request message handler."
+            }
+          }
+        },
+        "product_version": {
+          "type": "string",
+          "description": "This is the version of the product."
+        },
+        "technical_description": {
+          "type": "object",
+          "description": "This is a human readable description of the technical aspects of this product that might be of interest to developers who wish to integrate with this product via LTI.",
+          "properties": {
+            "default_value": {
+              "type": "string",
+              "description": "This is the default value for the text. This default value is used if (1) the key is not specified, (2) the localization capability is not enabled, or (3) the specified key is not found in the locale-specific resource bundle."
+            },
+            "key": {
+              "type": "string",
+              "description": "If localization is supported then the key identifies a property in the bundle returned by the get-bundle-request message handler."
+            }
+          }
+        },
+        "product_family": {
+          "type": "object",
+          "description": "An inverse attribute that references the ProductFamily within which this ProductInfo is defined.",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "A unique identifier for the resource."
+            },
+            "vendor": {
+              "type": "object",
+              "description": "The vendor that owns the ProductFamily.",
+              "properties": {
+                "@id": {
+                  "type": "string",
+                  "description": "The URI that identifies this Vendor instance."
+                },
+                "code": {
+                  "type": "string",
+                  "description": "A unique identifier for the resource."
+                },
+                "vendor_name": {
+                  "type": "object",
+                  "description": "Defines a human readable name for the Vendor. The name should be suitable for display in management screens within the Tool Provider system.",
+                  "properties": {
+                    "default_value": {
+                      "type": "string",
+                      "description": "The default value for the display name. This value is used if (1) the key attribute is undefined, (2) the localization capability is not enabled, or (3) a value for the specified key is not found in the locale-specific resource bundle."
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "The key used to lookup the locale-specific value from a resource bundle."
+                    }
+                  }
+                },
+                "description": {
+                  "type": "object",
+                  "description": "This is a human-readable description of the Vendor.",
+                  "properties": {
+                    "default_value": {
+                      "type": "string",
+                      "description": "This is the default value for the text. This default value is used if (1) the key is not specified, (2) the localization capability is not enabled, or (3) the specified key is not found in the locale-specific resource bundle."
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "If localization is supported then the key identifies a property in the bundle returned by the get-bundle-request message handler."
+                    }
+                  }
+                },
+                "website": {
+                  "type": "string",
+                  "description": "This is the URL of the vendor."
+                },
+                "timestamp": {
+                  "type": "string",
+                  "description": "A timestamp for the Vendor record. This value is useful for determining which record is most current."
+                },
+                "contact": {
+                  "type": "object",
+                  "description": "Contact information for this Vendor.",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "description": "The email of the primary contact for the associated object."
+                    }
+                  },
+                  "required": ["email"]
+                }
+              },
+              "required": ["code", "vendor_name", "timestamp"]
+            }
+          },
+          "required": ["code", "vendor"]
+        }
+      },
+      "required": ["product_name", "product_version", "product_family"]
+    }
+  },
+  "required": ["guid", "product_info"]
+}

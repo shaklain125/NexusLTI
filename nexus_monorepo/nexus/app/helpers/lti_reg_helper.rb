@@ -85,6 +85,7 @@ module LtiRegHelper
 
   def register_proxy(registration)
     LtiToolProxyRegistration.register(registration, self)
+    LtiRegistration.delete_all
   end
 
   def reg_generate(params)
