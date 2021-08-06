@@ -8,6 +8,8 @@ module LtiUtils
   require_dependency 'lti_utils/origin_checker'
   require_dependency 'lti_utils/token_io'
   require_dependency 'lti_utils/ims_helper'
+  require_dependency 'lti_utils/reg_helper'
+  require_dependency 'lti_utils/session_helper'
 
   class << self
     def version

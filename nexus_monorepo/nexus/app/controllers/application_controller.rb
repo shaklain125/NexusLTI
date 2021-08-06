@@ -27,12 +27,7 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user
-    unless LtiUtils.invalid_token(params)
-      return nil if @is_teacher && !LtiUtils.get_user_id(params)
-      lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: LtiUtils.get_user_id(params) })
-      return nil unless lti_session.any?
-      return lti_session.first.user
-    end
+    return LtiUtils.get_current_user(params) unless LtiUtils.invalid_token(params)
     devise_current_user
   end
 end

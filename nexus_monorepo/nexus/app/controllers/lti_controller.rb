@@ -4,8 +4,12 @@ class LtiController < ApplicationController
   include LtiHelper
 
   before_action :contains_token_param, except: [:launch]
-  before_action :lti_authentication, only: [:launch]
+  before_action :check_launch, only: [:launch]
   skip_before_action :verify_authenticity_token, only: [:launch, :login_post, :configure_generate]
+
+  def check_launch
+    @lti_launch = LtiLaunch.check_launch(LtiUtils.models.parsed_lti_message(request))
+  end
 
   def contains_token_param
     LtiUtils.contains_token_param_raise(params)
@@ -33,11 +37,11 @@ class LtiController < ApplicationController
     is_student = LtiUtils.verify_student(params)
     is_teacher = LtiUtils.verify_teacher(params)
 
-    user = create_student('student2@student.com', 'Student2') if is_student # create_student(person[:email], person[:name])
+    user = LtiUtils.create_student('student2@student.com', 'Student2') if is_student # create_student(person[:email], person[:name])
 
     user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com' person[:email] -- create_teacher(person[:email], person[:name])
 
-    create_session(user)  if is_student || is_teacher
+    LtiUtils.create_session(user, params)  if is_student || is_teacher
 
     LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
 
@@ -83,7 +87,7 @@ class LtiController < ApplicationController
       return
     end
 
-    create_session(u)
+    LtiUtils.create_session(u, params)
 
     LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, u.id))
 

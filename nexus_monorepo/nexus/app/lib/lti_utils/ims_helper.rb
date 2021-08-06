@@ -42,6 +42,12 @@ module LtiUtils
       def generate_message(request_parameters)
         LtiUtils.models_all::Messages::Message.generate(request_parameters)
       end
+
+      def parsed_lti_message(request)
+        lti_message = generate_message(request.request_parameters)
+        lti_message.launch_url = request.url
+        lti_message
+      end
     end
   end
 end

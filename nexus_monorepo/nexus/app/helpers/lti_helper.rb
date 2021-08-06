@@ -21,8 +21,6 @@ module LtiHelper
                                             else
                                               "Unknown Error: #{ex.error.to_s.underscore.titleize}"
                                             end}"
-    @message = LtiUtils.models.generate_message(request.request_parameters)
-    @header = SimpleOAuth::Header.new(:post, request.url, @message.post_params, consumer_key: @message.oauth_consumer_key, consumer_secret: 'secret', callback: 'about:blank')
     render "lti/launch_error", status: 200
   end
 
@@ -33,7 +31,7 @@ module LtiHelper
     @referrer = request.referrer
     @session_id = session[:session_id]
 
-    @is_lti_launch = LtiLaunch.check_launch_bool(parsed_lti_message(request))
+    @is_lti_launch = LtiLaunch.check_launch_bool(LtiUtils.models.parsed_lti_message(request))
     @is_lms_origin = LtiUtils.check_if_is_lms_origin(request)
     @is_lms_referrer = LtiUtils.check_if_is_lms_referrer(request)
     @is_lms_or_launch = @is_lti_launch || @is_lms_origin
@@ -53,13 +51,22 @@ module LtiHelper
 
     @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(controller_name)
 
-    if @is_ref_page && LtiUtils.lms_hosts.any? && !@is_lms_referrer && !@is_valid_student_page
-      params.delete(:lti_token)
-      @is_teacher = false
-      @is_student = false
-      @is_ref_page = false
-      @student_ref_page = false
-      @teacher_ref_page = false
+    if @is_ref_page
+      valid = true
+      if LtiUtils.lms_hosts.any?
+        valid = false if !@is_lms_referrer && !@is_valid_student_page
+      elsif !@is_valid_student_page
+        valid = false
+      end
+
+      unless valid
+        params.delete(:lti_token)
+        @is_teacher = false
+        @is_student = false
+        @is_ref_page = false
+        @student_ref_page = false
+        @teacher_ref_page = false
+      end
     end
 
     @is_lti = LtiUtils.contains_token_param(params)
@@ -101,45 +108,5 @@ module LtiHelper
     end
 
     raise LtiLaunch::Unauthorized, :invalid_page_access if !valid && @is_lti
-  end
-
-  # ------------------LTI Session----------------------- #
-
-  def create_teacher(email, name)
-    u = User.find_by_email(email)
-    u ||= User.create(email: email,
-                      password: '12345678',
-                      password_confirmation: '12345678',
-                      name: name,
-                      admin: true)
-    u
-  end
-
-  def create_student(email, name)
-    u = User.find_by_email(email)
-    u ||= User.create(email: email,
-                      password: '12345678',
-                      password_confirmation: '12345678',
-                      name: name)
-    u
-  end
-
-  def create_session(user)
-    return nil unless user
-    session_exists = LtiSession.where({ user: user.id })
-    session_exists.delete_all if session_exists.any?
-    LtiSession.create(lti_tool: LtiTool.find(LtiUtils.get_tool_id(params)), user: user)
-  end
-
-  # ------------------LTI LAUNCH----------------------- #
-
-  def parsed_lti_message(request)
-    lti_message = LtiUtils.models.generate_message(request.request_parameters)
-    lti_message.launch_url = request.url
-    lti_message
-  end
-
-  def lti_authentication
-    @lti_launch = LtiLaunch.check_launch(parsed_lti_message(request))
   end
 end
