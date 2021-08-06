@@ -8,7 +8,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <% lti_nexus_logo_path = @is_lti_error ? @submission_path : 'javascript:void(0)' if @is_student  %>
+      <% lti_nexus_logo_path = 'javascript:void(0)' if @is_student || @is_lti_error  %>
       <% lti_nexus_logo_path = @is_lti_reg ? 'javascript:void(0)' : lti_nexus_logo_path %>
       <%= link_to "Nexus", lti_nexus_logo_path || root_path, class: "navbar-brand" %>
     </div>

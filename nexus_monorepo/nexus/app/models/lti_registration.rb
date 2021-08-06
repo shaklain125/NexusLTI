@@ -1,5 +1,4 @@
 class LtiRegistration < ActiveRecord::Base
-  validates :correlation_id, uniqueness: true, allow_nil: true
   serialize :tool_proxy_json, JSON
   serialize :registration_request_params, JSON
   belongs_to :lti_tool

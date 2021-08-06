@@ -12,10 +12,6 @@ module LtiRegHelper
     @error = "Reason: #{case ex.error
                         when :missing_product_instance
                           'Missing Product Instance Config'
-                        when :already_registered
-                          'Tool Proxy Already Registered'
-                        when :unsupported_capabilities_error
-                          'Unsupported Capabilities'
                         else
                           'Unknown Error'
                         end}"
@@ -131,18 +127,23 @@ module LtiRegHelper
 
   def save_caps(registration, services, parameters)
     tool_services = services.map do |_, v|
-      actions = [*JSON.parse("{\"a\":#{v['actions']}}")['a']]
-      LtiUtils.models_all::RestServiceProfile.new(service: v['id'], action: actions)
+      LtiUtils.models_all::RestServiceProfile.new(
+        service: v['id'],
+        action: [*JSON.parse("{\"a\":#{v['actions']}}")['a']]
+      )
     end
 
     tool_proxy = registration.tool_proxy
     tool_profile = tool_proxy.tool_profile
     tool_proxy.security_contract.tool_service = tool_services if tool_services.present?
-    tool_proxy.custom = nil
 
-    rh = tool_profile.resource_handler.first
-    mh = rh.message.first
-    mh.parameter = parameters.map { |var, val| LtiUtils.models_all::Parameter.new(name: val['name'], variable: var) }
+    parameters = parameters.map do |var, val|
+      LtiUtils.models_all::Parameter.new(name: val['name'], variable: var)
+    end
+
+    tool_profile.resource_handler.each do |rh|
+      rh.message.each { |mh| mh.parameter = mh.parameter | parameters }
+    end
 
     registration.update(tool_proxy_json: tool_proxy.to_json)
   end

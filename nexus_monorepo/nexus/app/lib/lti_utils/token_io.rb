@@ -15,8 +15,12 @@ module LtiUtils
       if session[:session_id] && cookies[:lti_token].nil?
         session[:lti_token]
       else
-        cookies[:lti_token]
+        get_cookie_token_only(cookies)
       end
+    end
+
+    def get_cookie_token_only(cookies)
+      LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP ? cookies[:lti_token] : nil
     end
 
     def set_cookie_token(cookies, session, token_encrypted)

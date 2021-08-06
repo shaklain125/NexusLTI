@@ -8,8 +8,18 @@ module LtiHelper
                                               'The nonce has already been used'
                                             when :request_to_old
                                               'The request is to old'
+                                            when :missing_arguments_or_unknown
+                                              'Missing arguments or Invalid request'
+                                            when :invalid_origin
+                                              'Invalid Origin'
+                                            when :invalid_lti_role_access
+                                              'Invalid LTI role access'
+                                            when :invalid_aid
+                                              'Assignment not set'
+                                            when :invalid_page_access
+                                              'Page access disabled'
                                             else
-                                              'Unknown Error'
+                                              "Unknown Error: #{ex.error.to_s.underscore.titleize}"
                                             end}"
     @message = LtiUtils.models.generate_message(request.request_parameters)
     @header = SimpleOAuth::Header.new(:post, request.url, @message.post_params, consumer_key: @message.oauth_consumer_key, consumer_secret: 'secret', callback: 'about:blank')
@@ -18,35 +28,48 @@ module LtiHelper
 
   def lti_auth
     return if controller_name.to_sym == :lti_registration
+
     @is_lti_error = false
     @referrer = request.referrer
     @session_id = session[:session_id]
 
-    is_lms_referer = LtiUtils.check_if_referrer_is_not_lms(request, params)
-    student_ref_page = LtiUtils::LtiRole.if_student_and_referer_valid_raise(params, request, controller_name, action_name)
-    teacher_ref_page = LtiUtils::LtiRole.if_teacher_and_referer_valid_raise(params, request, controller_name, action_name)
-    is_ref_page = (@is_teacher && teacher_ref_page) || (@is_student && student_ref_page)
+    @is_lti_launch = LtiLaunch.check_launch_bool(parsed_lti_message(request))
+    @is_lms_origin = LtiUtils.check_if_is_lms_origin(request)
+    @is_lms_referrer = LtiUtils.check_if_is_lms_referrer(request)
+    @is_lms_or_launch = @is_lti_launch || @is_lms_origin
 
-    unless is_ref_page
-      if !LtiUtils.cookie_token_exists(cookies, session)
-        LtiUtils.raise_if_not_cookie_token_present_and_lti(cookies, session) if @is_student
-      elsif params[:lti_token].nil?
-        params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
-      else
-        params.delete(:lti_token)
-      end
+    if @is_lms_or_launch
+      params.delete(:lti_token)
+    else
+      params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
+    end
+
+    @is_teacher = LtiUtils.verify_teacher(params)
+    @is_student = LtiUtils.verify_student(params)
+
+    @student_ref_page = @is_student && LtiUtils::LtiRole.valid_student_referer(params, request, controller_name, action_name)
+    @teacher_ref_page = @is_teacher && LtiUtils::LtiRole.valid_teacher_referer(params, request, controller_name, action_name)
+    @is_ref_page = @teacher_ref_page || @student_ref_page
+
+    @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(controller_name)
+
+    if @is_ref_page && LtiUtils.lms_hosts.any? && !@is_lms_referrer && !@is_valid_student_page
+      params.delete(:lti_token)
+      @is_teacher = false
+      @is_student = false
+      @is_ref_page = false
+      @student_ref_page = false
+      @teacher_ref_page = false
     end
 
     @is_lti = LtiUtils.contains_token_param(params)
-    @is_teacher = LtiUtils.verify_teacher(params)
-    @is_student = LtiUtils.verify_student(params)
     @is_config_generator = LtiUtils.from_generator(params) && !(controller_name.to_sym == :lti && (action_name.to_sym == :configure || action_name.to_sym == :login))
     @is_manage_assignment = LtiUtils.from_manage_assignment(params) && !(controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment)
     @is_submission = LtiUtils.from_submission(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
     @submission_path = new_submission_path(aid: LtiUtils.get_submission_token(params)[:aid]) if @is_submission
 
-    validate_token unless is_lms_referer
-    block_controllers unless is_lms_referer
+    validate_token unless @is_lms_or_launch
+    block_controllers unless @is_lms_or_launch
   end
 
   def lti_request?
@@ -77,7 +100,7 @@ module LtiHelper
       valid = false if current_user
     end
 
-    raise LtiLaunch::Unauthorized, :invalid if !valid && LtiUtils.contains_token_param(params)
+    raise LtiLaunch::Unauthorized, :invalid_page_access if !valid && @is_lti
   end
 
   # ------------------LTI Session----------------------- #

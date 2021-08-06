@@ -137,24 +137,17 @@ module LtiUtils
         verify_teacher(params) && verify_sys_admin(params)
       end
 
-      def if_student_show_student_pages_raise(params, controller_name)
-        conrollers_for_students = [
+      def valid_student_pages(controller_name)
+        [
           :submission
         ].include?(controller_name.to_sym)
-        raise LtiLaunch::Unauthorized, :invalid if verify_student(params) && !conrollers_for_students
       end
 
-      def if_student_and_referer_valid_raise(params, request, controller_name, action_name)
-        raise LtiLaunch::Unauthorized, :invalid unless valid_student_referer(params, request, controller_name, action_name)
-        true
+      def if_student_show_student_pages_raise(params, controller_name)
+        raise LtiLaunch::Unauthorized, :invalid_lti_role_access if verify_student(params) && !valid_student_pages(controller_name)
       end
 
-      def if_teacher_and_referer_valid_raise(params, request, controller_name, action_name)
-        raise LtiLaunch::Unauthorized, :invalid unless valid_teacher_referer(params, request, controller_name, action_name)
-        true
-      end
-
-      def valid_student_referer(params, request, controller_name, action_name)
+      def valid_student_referer(_params, _request, controller_name, action_name)
         controller_name = controller_name.to_sym
         action_name = action_name.to_sym
         page_for_ref = false
@@ -169,22 +162,13 @@ module LtiUtils
           page_for_ref = false
         end
 
-        is_student_and_valid_page = verify_student(params) && page_for_ref
-        is_lms = LtiUtils.check_if_referrer_is_not_lms(request, params)
-
-        return false if is_student_and_valid_page && !is_lms
-        true
+        page_for_ref
       end
 
-      def valid_teacher_referer(params, request, controller_name, action_name)
+      def valid_teacher_referer(_params, _request, controller_name, action_name)
         controller_name = controller_name.to_sym
         action_name = action_name.to_sym
-        page_for_ref = false
-
-        is_teacher_and_valid_page = verify_teacher(params) && page_for_ref
-        is_lms = LtiUtils.check_if_referrer_is_not_lms(request, params)
-
-        is_teacher_and_valid_page && !is_lms ? false : true
+        false
       end
 
       private :_check_token, :_get_token

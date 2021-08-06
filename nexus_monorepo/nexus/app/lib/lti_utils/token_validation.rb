@@ -6,7 +6,7 @@ module LtiUtils
 
     def contains_token_param_raise(params)
       # raise if token missing
-      raise LtiLaunch::Unauthorized, :invalid unless contains_token_param(params)
+      raise LtiLaunch::Unauthorized, :invalid_unexpected_token unless contains_token_param(params)
     end
 
     def invalid_token(params)
@@ -20,18 +20,18 @@ module LtiUtils
       # raise if it contains token and is invalid
       contains_token = contains_token_param(params)
       invalid = invalid_token(params)
-      raise LtiLaunch::Unauthorized, :invalid if contains_token && invalid
+      raise LtiLaunch::Unauthorized, :invalid_lti_token if contains_token && invalid
       false
     end
 
     def raise_if_contains_token(params)
-      raise LtiLaunch::Unauthorized, :invalid if contains_token_param(params)
+      raise LtiLaunch::Unauthorized, :invalid_lti_user if contains_token_param(params)
     end
 
     def raise_if_session_cookie_check_and_lti(cookies, session, request, params)
       id = session[:session_id]
       session_token = session[:lti_token]
-      cookies_token = cookies[:lti_token]
+      cookies_token = get_cookie_token_only(cookies)
 
       is_https = request.ssl?
 
@@ -50,11 +50,11 @@ module LtiUtils
 
       delete_cookie_token_not_session(cookies) if !http_valid || https_valid
 
-      raise LtiLaunch::Unauthorized, :invalid if contains_token_param(params) && !is_valid_session
+      raise LtiLaunch::Unauthorized, :invalid_lti_session if contains_token_param(params) && !is_valid_session
     end
 
     def raise_if_not_cookie_token_present_and_lti(cookies, session)
-      raise LtiLaunch::Unauthorized, :invalid unless cookie_token_exists(cookies, session)
+      raise LtiLaunch::Unauthorized, :invalid_missing_session unless cookie_token_exists(cookies, session)
     end
 
     def cookie_token_exists(cookies, session)

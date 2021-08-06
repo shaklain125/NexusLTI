@@ -66,8 +66,6 @@ class LtiToolProxyRegistration
   end
 
   def self.register(registration, controller)
-    raise LtiRegistration::Error, :already_registered if registration.workflow_state == :registered
-
     tool_proxy = registration.tool_proxy
     registration_request = registration.registration_request
     return_url = registration_request.launch_presentation_return_url
@@ -92,7 +90,7 @@ class LtiToolProxyRegistration
       lti_version: tool_proxy.lti_version
     )
 
-    registration.update(workflow_state: 'registered', lti_tool: tp)
+    registration.update(lti_tool: tp)
 
     {
       tool_proxy_uuid: tool_proxy_guid,
@@ -124,8 +122,15 @@ class LtiToolProxyRegistration
           host: @controller.request.host_with_port,
           controller: m['route']['controller'],
           action: m['route']['action']
-        )
+        ),
+        parameter: parameters(m['parameters'])
       }
+    end
+  end
+
+  def parameters(params)
+    (params || []).map do |p|
+      LtiUtils.models_all::Parameter.new(p.symbolize_keys)
     end
   end
 end

@@ -12,14 +12,10 @@ class LtiController < ApplicationController
   end
 
   def launch
-    tool = LtiTool.find(@lti_launch.lti_tool_id)
-    @secret = "&#{tool.shared_secret}"
     @message = (@lti_launch && @lti_launch.message) || LtiUtils.models.generate_message(request.request_parameters)
-    @header = SimpleOAuth::Header.new(:post, request.url, @message.post_params, consumer_key: @message.oauth_consumer_key, consumer_secret: 'secret', callback: 'about:blank')
-    # render json: JSON.pretty_generate({ launch: params })
-
     @launch_id = @lti_launch.id
     @tool_id = @lti_launch.lti_tool_id
+
     custom_params = @message.custom_params
     custom = LtiUtils.no_prefix_custom(custom_params)
     config = custom[:lti_config]
@@ -52,7 +48,7 @@ class LtiController < ApplicationController
         LtiUtils.update_and_set_token(params, cookies, session, { submission: { aid: config[:aid] } })
         redirect_to new_submission_path(aid: config[:aid])
       else
-        raise LtiLaunch::Unauthorized, :invalid
+        raise LtiLaunch::Unauthorized, :invalid_aid
       end
       return
     elsif is_teacher
@@ -67,6 +63,8 @@ class LtiController < ApplicationController
     end
 
     redirect_to lti_home_path
+    # rescue StandardError
+    #   raise LtiLaunch::Unauthorized, :missing_arguments_or_unknown
   end
 
   def login

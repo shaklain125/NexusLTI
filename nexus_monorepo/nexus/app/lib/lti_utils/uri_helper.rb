@@ -11,7 +11,7 @@ module LtiUtils
     def get_host(uri)
       return nil unless uri
       begin
-        Uri.parse(uri).host
+        URI.parse(uri).host
       rescue StandardError
         nil
       end

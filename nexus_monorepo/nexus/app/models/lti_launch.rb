@@ -13,6 +13,15 @@ class LtiLaunch < ActiveRecord::Base
     tool.lti_launches.create(nonce: lti_message.oauth_nonce, message: lti_message.post_params)
   end
 
+  def self.check_launch_bool(lti_message)
+    tool = LtiTool.find_by_uuid(lti_message.oauth_consumer_key)
+    return false unless tool
+    return false unless LtiUtils.services.authenticate_message(lti_message.launch_url, lti_message.post_params, tool.shared_secret)
+    return false if tool.lti_launches.where(nonce: lti_message.oauth_nonce).any?
+    return false if  DateTime.strptime(lti_message.oauth_timestamp, '%s') < 5.minutes.ago
+    true
+  end
+
   def message
     LtiUtils.models.generate_message(read_attribute(:message))
   end
