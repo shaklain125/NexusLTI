@@ -9,7 +9,7 @@ class ApplicationController < ActionController::Base
 
   before_action :lti_auth
   skip_before_action :verify_authenticity_token, if: :lti_request?
-  rescue_from LtiLaunch::Unauthorized, with: :handle_lti_error
+  rescue_from LtiLaunch::Error, with: :handle_lti_error
   rescue_from LtiRegistration::Error, with: :handle_lti_reg_error
 
   protected
@@ -27,7 +27,7 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user
-    return LtiUtils.get_current_user(params) unless LtiUtils.invalid_token(params)
+    return LtiUtils::Session.get_current_user(params) unless LtiUtils.invalid_token(params)
     devise_current_user
   end
 end

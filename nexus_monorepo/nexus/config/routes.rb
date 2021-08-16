@@ -108,10 +108,10 @@ Rails.application.routes.draw do
       end
     end
 
-    get 'lti/index', action: :index, as: :lti_home
     get 'lti/login', action: :login, as: :lti_login
     post 'lti/login', action: :login_post, as: :lti_login_post
     get 'lti/logout', action: :logout, as: :lti_logout
+    get 'lti/exit', action: :exit, as: :lti_exit
 
     get 'lti/configure', action: :configure, as: :lti_configure
     post 'lti/configure/generate', action: :configure_generate, as: :lti_configure_generate
@@ -122,7 +122,7 @@ Rails.application.routes.draw do
     post 'lti/register', action: :register, as: :lti_registration
     post 'lti/auto_register', action: :auto_register, as: :lti_auto_registration
     post 'lti/submit_capabilities', action: :save_capabilities, as: :lti_save_capabilities
-    get 'lti/submit_proxy/:registration_uuid', action: :submit_proxy, as: :lti_submit_proxy
+    get 'lti/submit_proxy/:reg_id', action: :submit_proxy, as: :lti_submit_proxy
     get 'lti/tool_proxy/:tool_proxy_id', action: :show, as: :lti_show_tool
   end
 

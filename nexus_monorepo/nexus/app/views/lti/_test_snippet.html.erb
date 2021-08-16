@@ -34,3 +34,14 @@
     </div>
   </div>
 <% end %>
+<% if false %>
+  <div>
+    <%= JSON.pretty_generate({token: LtiUtils.get_token(params)}) %>
+  </div>
+  <div>
+    Referrer: <%= @referrer %>
+  </div>
+  <div>
+    Referrer: <%= request.headers['origin'] %>
+  </div>
+<% end %>

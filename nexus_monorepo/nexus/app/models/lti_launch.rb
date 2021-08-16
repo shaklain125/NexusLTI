@@ -4,29 +4,21 @@ class LtiLaunch < ActiveRecord::Base
   serialize :message
 
   def self.check_launch(lti_message)
-    tool = LtiTool.find_by_uuid(lti_message.oauth_consumer_key)
-    raise Unauthorized, :invalid_request unless tool
-    raise Unauthorized, :invalid_signature unless LtiUtils.services.authenticate_message(lti_message.launch_url, lti_message.post_params, tool.shared_secret)
-    raise Unauthorized, :invalid_nonce if tool.lti_launches.where(nonce: lti_message.oauth_nonce).any?
-    raise Unauthorized, :request_to_old if  DateTime.strptime(lti_message.oauth_timestamp, '%s') < 5.minutes.ago
+    tool, msg = LtiUtils.check_launch(lti_message)
+    raise Error, msg if msg != :valid
     tool.lti_launches.where('created_at > ?', 1.day.ago).delete_all
     tool.lti_launches.create(nonce: lti_message.oauth_nonce, message: lti_message.post_params)
   end
 
   def self.check_launch_bool(lti_message)
-    tool = LtiTool.find_by_uuid(lti_message.oauth_consumer_key)
-    return false unless tool
-    return false unless LtiUtils.services.authenticate_message(lti_message.launch_url, lti_message.post_params, tool.shared_secret)
-    return false if tool.lti_launches.where(nonce: lti_message.oauth_nonce).any?
-    return false if  DateTime.strptime(lti_message.oauth_timestamp, '%s') < 5.minutes.ago
-    true
+    LtiUtils.check_launch(lti_message)[1] == :valid
   end
 
   def message
     LtiUtils.models.generate_message(read_attribute(:message))
   end
 
-  class Unauthorized < StandardError
+  class Error < StandardError
     attr_reader :error
 
     def initialize(error = :unknown)

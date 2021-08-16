@@ -1,27 +1,30 @@
 module LtiHelper
   def handle_lti_error(ex)
     @is_lti_error = true
-    @error = "Authentication failed with: #{case ex.error
-                                            when :invalid_signature
-                                              'The OAuth Signature was Invalid'
-                                            when :invalid_nonce
-                                              'The nonce has already been used'
-                                            when :request_to_old
-                                              'The request is to old'
-                                            when :missing_arguments_or_unknown
-                                              'Missing arguments or Invalid request'
-                                            when :invalid_origin
-                                              'Invalid Origin'
-                                            when :invalid_lti_role_access
-                                              'Invalid LTI role access'
-                                            when :invalid_aid
-                                              'Assignment not set'
-                                            when :invalid_page_access
-                                              'Page access disabled'
-                                            else
-                                              "Unknown Error: #{ex.error.to_s.underscore.titleize}"
-                                            end}"
-    render "lti/launch_error", status: 200
+    @error = LtiUtils::ErrorHandlers.lti_error(ex)
+
+    # Exit LTI on all other messages except the following
+    no_exit_err_msgs = [
+      :invalid_lti_role_access,
+      :invalid_page_access,
+      :invalid_aid,
+      :assigment_not_started
+    ]
+    no_exit_err_msgs << :invalid_origin if @is_student
+    exit_lti unless no_exit_err_msgs.include?(ex.error)
+
+    if ex.error == :invalid_origin
+      redirect_to root_path
+      return
+    end
+
+    render "lti/error", status: 200
+  end
+
+  def handle_lti_reg_error(ex)
+    @is_lti_reg_error = true
+    @error = LtiUtils::ErrorHandlers.lti_reg_error(ex)
+    render "lti_registration/error", status: 200
   end
 
   def lti_auth
@@ -32,8 +35,8 @@ module LtiHelper
     @session_id = session[:session_id]
 
     @is_lti_launch = LtiLaunch.check_launch_bool(LtiUtils.models.parsed_lti_message(request))
-    @is_lms_origin = LtiUtils.check_if_is_lms_origin(request)
-    @is_lms_referrer = LtiUtils.check_if_is_lms_referrer(request)
+    @is_lms_origin = LtiUtils::Origin.check_if_is_lms_origin(request)
+    @is_lms_referrer = LtiUtils::Origin.check_if_is_lms_referrer(request)
     @is_lms_or_launch = @is_lti_launch || @is_lms_origin
 
     if @is_lms_or_launch
@@ -42,18 +45,18 @@ module LtiHelper
       params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
     end
 
-    @is_teacher = LtiUtils.verify_teacher(params)
-    @is_student = LtiUtils.verify_student(params)
+    @is_teacher = LtiUtils::LtiRole.verify_teacher(params)
+    @is_student = LtiUtils::LtiRole.verify_student(params)
 
-    @student_ref_page = @is_student && LtiUtils::LtiRole.valid_student_referer(params, request, controller_name, action_name)
-    @teacher_ref_page = @is_teacher && LtiUtils::LtiRole.valid_teacher_referer(params, request, controller_name, action_name)
+    @student_ref_page = @is_student && LtiUtils::LtiRole.valid_student_referer(controller_name, action_name)
+    @teacher_ref_page = @is_teacher && LtiUtils::LtiRole.valid_teacher_referer(controller_name, action_name)
     @is_ref_page = @teacher_ref_page || @student_ref_page
 
     @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(controller_name)
 
     if @is_ref_page
       valid = true
-      if LtiUtils.lms_hosts.any?
+      if LtiUtils::Origin.lms_hosts.any?
         valid = false if !@is_lms_referrer && !@is_valid_student_page
       elsif !@is_valid_student_page
         valid = false
@@ -81,22 +84,24 @@ module LtiHelper
 
   def lti_request?
     return if controller_name.to_sym == :lti_registration
-    http_referer_uri = LtiUtils.http_referer_uri(request)
-    same_host_and_referrer = LtiUtils.check_host(request.referrer, [LtiUtils.get_host(request.headers['origin'])])
+    http_referer_uri = LtiUtils::URIHelper.http_referer_uri(request)
+    same_host_and_referrer = LtiUtils::URIHelper.check_host(request.referrer, [LtiUtils::URIHelper.get_host(request.headers['origin'])])
     http_referer_and_host = http_referer_uri ? request.host == http_referer_uri.host : false
     valid_methods = %w[POST PATCH].include?(request.method)
-    is_student = LtiUtils.verify_student(cookies)
-    is_teacher = LtiUtils.verify_teacher(cookies)
-    is_teacher_or_student = is_student || is_teacher
-    is_teacher_or_student && valid_methods && same_host_and_referrer && http_referer_and_host
+    token = {}
+    token[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
+    is_student = LtiUtils::LtiRole.verify_student(token)
+    is_teacher = LtiUtils::LtiRole.verify_teacher(token)
+    is_valid_lti_role = is_student || is_teacher
+    is_valid_lti_role && valid_methods && same_host_and_referrer && http_referer_and_host
   end
 
   def validate_token
     LtiUtils.invalid_token_raise(params)
     LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name)
-    LtiUtils.raise_if_null_referrer_and_lti(request, params)
-    LtiUtils.raise_if_session_cookie_check_and_lti(cookies, session, request, params)
-    LtiUtils.raise_if_invalid_token_ip(request, params)
+    LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)
+    LtiUtils::Session.raise_if_invalid_session(cookies, session, request, params)
+    LtiUtils::Origin.raise_if_invalid_token_ip(request, params)
   end
 
   def block_controllers
@@ -107,6 +112,12 @@ module LtiHelper
       valid = false if current_user
     end
 
-    raise LtiLaunch::Unauthorized, :invalid_page_access if !valid && @is_lti
+    raise LtiLaunch::Error, :invalid_page_access if !valid && @is_lti
+  end
+
+  def exit_lti
+    LtiUtils::Session.logout_session(params, cookies, session) unless LtiUtils.invalid_token(params)
+    sign_out(current_user)
+    LtiUtils.delete_cookie_token(cookies, session)
   end
 end

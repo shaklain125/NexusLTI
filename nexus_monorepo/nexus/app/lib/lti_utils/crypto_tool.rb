@@ -1,7 +1,7 @@
 module LtiUtils
   class << self
     def secret
-      '8cb13f93bf4b9bd12846d08c8814755d35fea3ff491bf08a0bbf381fe9a80892703ee58b072c18acc376d72b0d42ad392e42c63309e46e3aff63b450c396520d'
+      LTI_CIPHER_SECRET
     end
 
     def encrypt_json(str)
@@ -43,7 +43,7 @@ module LtiUtils
 
     def _encrypt(str, key)
       # OpenSSL::Cipher.ciphers
-      cipher = OpenSSL::Cipher.new('CAMELLIA-192-OFB').encrypt
+      cipher = OpenSSL::Cipher.new('AES-192-CBC').encrypt
       cipher.key = Digest::SHA1.hexdigest key
       s = cipher.update(str) + cipher.final
       s = s.unpack('H*')
@@ -51,7 +51,7 @@ module LtiUtils
     end
 
     def _decrypt(str, key)
-      cipher = OpenSSL::Cipher.new('CAMELLIA-192-OFB').decrypt
+      cipher = OpenSSL::Cipher.new('AES-192-CBC').decrypt
       cipher.key = Digest::SHA1.hexdigest key
       s = [str].pack("H*").unpack("C*").pack("c*")
       cipher.update(s) + cipher.final

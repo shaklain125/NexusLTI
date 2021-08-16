@@ -6,6 +6,7 @@
 
 LTI_HTTPS_SESSION = true
 LTI_HTTP_SESSION = false
+LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP = false
 
 Rails.application.config.session_store :cookie_store,  {
   key: '_nexus_session',
@@ -17,5 +18,6 @@ Rails.application.config.session_store :cookie_store,  {
 
 # LTI_HTTPS_SESSION = false
 # LTI_HTTP_SESSION = true
+# LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP = true
 
 # Rails.application.config.session_store :cookie_store, key: '_nexus_session'

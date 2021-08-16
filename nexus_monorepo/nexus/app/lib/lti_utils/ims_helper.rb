@@ -15,6 +15,33 @@ module LtiUtils
     def models_all
       IMS::LTI::Models
     end
+
+    def version
+      models_all::LTIModel::LTI_VERSION_2P0
+    end
+  end
+  class Roles
+    class << self
+      def roles_json
+        roles = IMS::LIS::Roles::Context::Handles
+        constants = roles.constants.map { |c| [c, roles.const_get(c)]  }
+        HashHelper.snake_case_symbolize(constants)
+      end
+
+      def system_roles_json
+        prefix = 'http://purl.imsglobal.org/vocab/lis/v2/person'
+        roles = {
+          SysAdmin: "#{prefix}#SysAdmin",
+          SysSupport: "#{prefix}#SysSupport",
+          Creator: "#{prefix}#Creator",
+          AccountAdmin: "#{prefix}#AccountAdmin",
+          User: "#{prefix}#User",
+          Administrator: "#{prefix}#Administrator",
+          None: "#{prefix}#None"
+        }
+        HashHelper.snake_case_symbolize(roles)
+      end
+    end
   end
 
   class Services
@@ -50,4 +77,6 @@ module LtiUtils
       end
     end
   end
+
+  private_constant :Services, :Models
 end

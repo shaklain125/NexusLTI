@@ -27,7 +27,7 @@ module LtiUtils
       if session[:session_id] && cookies[:lti_token].nil?
         session[:lti_token] = token_encrypted
       else
-        set_lti_cookie(cookies, :lti_token, token_encrypted)
+        CookieHelper.set_lti_cookie(cookies, :lti_token, token_encrypted)
       end
     end
 
@@ -45,11 +45,16 @@ module LtiUtils
     end
 
     def delete_cookie_token(cookies, session)
-      delete_lti_cookie(cookies, :lti_token) if cookie_token_exists(cookies, session)
+      delete_cookie_token_session(session)
+      delete_cookie_token_not_session(cookies)
+    end
+
+    def delete_cookie_token_session(session)
+      session.delete(:lti_token) unless session[:lti_token].nil?
     end
 
     def delete_cookie_token_not_session(cookies)
-      delete_lti_cookie(cookies, :lti_token) unless cookies[:lti_token].nil?
+      CookieHelper.delete_lti_cookie(cookies, :lti_token) unless cookies[:lti_token].nil?
     end
 
     def get_tool_id(params)

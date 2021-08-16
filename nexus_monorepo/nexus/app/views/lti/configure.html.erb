@@ -107,8 +107,8 @@
       <div class="col-md-12 col-sm-12 col-xs-12">
         <select class="form-control assignment_select">
           <option selected>Select an Assignment</option>
-          <% current_user.assignments.started.each do |a| %>
-            <option value="<%= a.id %>"><%= "Course: #{a.course.title} #{'-'*5} #{a.title} #{'-'*5} Deadline: #{distance_from_now_string a.deadline}" %></option>
+          <% current_user.assignments.each do |a| %>
+            <option value="<%= a.id %>"><%= "Course: #{a.course.title} #{'-'*5} #{a.title} #{'-'*5} #{a.started? ? 'Started' : 'Starts'}: #{distance_from_now_string a.start} #{'-'*5} Deadline: #{distance_from_now_string a.deadline}" %></option>
           <% end %>
         </select>
       </div>
