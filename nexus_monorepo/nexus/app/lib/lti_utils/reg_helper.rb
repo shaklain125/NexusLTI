@@ -93,7 +93,7 @@ module LtiUtils
         LtiUtils::ToolProxyReg.register(reg, controller)
         reg.destroy
         { success: true }.symbolize_keys
-      rescue IMS::LTI::Errors::ToolProxyRegistrationError => e
+      rescue LtiUtils.errors.all::ToolProxyRegistrationError => e
         error = {
           tool_proxy_guid: reg.tool_proxy.tool_proxy_guid,
           response_status: e.response_status,

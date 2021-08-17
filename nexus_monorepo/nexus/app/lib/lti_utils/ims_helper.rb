@@ -8,6 +8,10 @@ module LtiUtils
       Models
     end
 
+    def errors
+      Errors
+    end
+
     def version
       models.all::LTIModel::LTI_VERSION_2P0
     end
@@ -15,6 +19,14 @@ module LtiUtils
 
   LTI = IMS::LTI
   LIS = IMS::LIS
+
+  class Errors
+    class << self
+      def all
+        LTI::Errors
+      end
+    end
+  end
 
   class Roles
     class << self
@@ -86,5 +98,5 @@ module LtiUtils
     end
   end
 
-  private_constant :LTI, :LIS, :Services, :Models
+  private_constant :LTI, :LIS, :Services, :Models, :Errors
 end
