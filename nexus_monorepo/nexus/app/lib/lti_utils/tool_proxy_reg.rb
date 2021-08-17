@@ -11,7 +11,7 @@ module LtiUtils
 
     def tool_proxy
       unless @tool_proxy
-        @tool_proxy ||= LtiUtils.models_all::ToolProxy.new(
+        @tool_proxy ||= LtiUtils.models.all::ToolProxy.new(
           id: 'defined_by_tool_consumer',
           lti_version: LtiUtils.version,
           security_contract: security_contract,
@@ -27,11 +27,11 @@ module LtiUtils
       return @security_contract if @security_contract
       p_attr = includes_split_secret? ? 'tp_half_shared_secret' : 'shared_secret'
       shared_secret = SecureRandom.hex(64)
-      @security_contract = LtiUtils.models_all::SecurityContract.new("#{p_attr}": shared_secret)
+      @security_contract = LtiUtils.models.all::SecurityContract.new("#{p_attr}": shared_secret)
     end
 
     def tool_profile
-      @tool_profile ||= LtiUtils.models_all::ToolProfile.new(
+      @tool_profile ||= LtiUtils.models.all::ToolProfile.new(
         lti_version: LtiUtils.version,
         product_instance: product_instance,
         resource_handler: resource_handlers,
@@ -46,12 +46,12 @@ module LtiUtils
       pr_json = File.read(product_instance_config)
       pr_json = JSON.parse(pr_json)
       pr_json.delete('$schema') if pr_json['$schema']
-      @product_instance = LtiUtils.models_all::ProductInstance.new.from_json(pr_json)
+      @product_instance = LtiUtils.models.all::ProductInstance.new.from_json(pr_json)
     end
 
     def resource_handlers
       @resource_handlers ||= LTI_RESOURCE_HANDLERS.map do |rh|
-        LtiUtils.models_all::ResourceHandler.from_json(
+        LtiUtils.models.all::ResourceHandler.from_json(
           {
             resource_type: { code: rh['code'] },
             resource_name: rh['name'],
@@ -62,7 +62,7 @@ module LtiUtils
     end
 
     def base_url_choice
-      [LtiUtils.models_all::BaseUrlChoice.new(default_base_url: @controller.request.base_url)]
+      [LtiUtils.models.all::BaseUrlChoice.new(default_base_url: @controller.request.base_url)]
     end
 
     def self.register(reg_obj, controller)
@@ -109,7 +109,7 @@ module LtiUtils
 
     def parameters(params)
       (params || []).map do |p|
-        LtiUtils.models_all::Parameter.new(p.symbolize_keys)
+        LtiUtils.models.all::Parameter.new(p.symbolize_keys)
       end
     end
 

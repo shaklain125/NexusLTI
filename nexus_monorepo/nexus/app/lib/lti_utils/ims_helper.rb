@@ -8,22 +8,18 @@ module LtiUtils
       Models
     end
 
-    def services_all
-      IMS::LTI::Services
-    end
-
-    def models_all
-      IMS::LTI::Models
-    end
-
     def version
-      models_all::LTIModel::LTI_VERSION_2P0
+      models.all::LTIModel::LTI_VERSION_2P0
     end
   end
+
+  LTI = IMS::LTI
+  LIS = IMS::LIS
+
   class Roles
     class << self
       def roles_json
-        roles = IMS::LIS::Roles::Context::Handles
+        roles = LIS::Roles::Context::Handles
         constants = roles.constants.map { |c| [c, roles.const_get(c)]  }
         HashHelper.snake_case_symbolize(constants)
       end
@@ -46,12 +42,16 @@ module LtiUtils
 
   class Services
     class << self
+      def all
+        LTI::Services
+      end
+
       def authenticate_message(launch_url, post_params, shared_secret)
-        LtiUtils.services_all::MessageAuthenticator.new(launch_url, post_params, shared_secret)
+        all::MessageAuthenticator.new(launch_url, post_params, shared_secret)
       end
 
       def new_tp_reg_service(registration_request)
-        LtiUtils.services_all::ToolProxyRegistrationService.new(registration_request)
+        all::ToolProxyRegistrationService.new(registration_request)
       end
 
       def get_tc_profile_from_tp_reg_service(registration_request)
@@ -66,8 +66,12 @@ module LtiUtils
 
   class Models
     class << self
+      def all
+        LTI::Models
+      end
+
       def generate_message(request_parameters)
-        LtiUtils.models_all::Messages::Message.generate(request_parameters)
+        all::Messages::Message.generate(request_parameters)
       end
 
       def parsed_lti_message(request)
@@ -75,8 +79,12 @@ module LtiUtils
         lti_message.launch_url = request.url
         lti_message
       end
+
+      def get_tool_proxy_from_json(json)
+        all::ToolProxy.from_json(json)
+      end
     end
   end
 
-  private_constant :Services, :Models
+  private_constant :LTI, :LIS, :Services, :Models
 end

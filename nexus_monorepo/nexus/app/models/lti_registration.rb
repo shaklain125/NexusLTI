@@ -8,7 +8,7 @@ class LtiRegistration < ActiveRecord::Base
   end
 
   def tool_proxy
-    LtiUtils.models_all::ToolProxy.from_json(tool_proxy_json)
+    LtiUtils.models.get_tool_proxy_from_json(tool_proxy_json)
   end
 
   def tool_consumer_profile

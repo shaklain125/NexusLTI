@@ -45,8 +45,8 @@ module LtiUtils
         tcp_url = tcp.id || reg.registration_request.tc_profile_url
 
         exclude_cap = [
-          LtiUtils.models_all::Messages::BasicLTILaunchRequest::MESSAGE_TYPE,
-          LtiUtils.models_all::Messages::ToolProxyReregistrationRequest::MESSAGE_TYPE
+          LtiUtils.models.all::Messages::BasicLTILaunchRequest::MESSAGE_TYPE,
+          LtiUtils.models.all::Messages::ToolProxyReregistrationRequest::MESSAGE_TYPE
         ]
 
         capabilities = tcp.capability_offered.each_with_object({ parameters: [] }) do |cap, hash|
@@ -68,7 +68,7 @@ module LtiUtils
 
       def save_services_and_params(reg, services, parameters)
         tool_services = services.map do |_, v|
-          LtiUtils.models_all::RestServiceProfile.new(
+          LtiUtils.models.all::RestServiceProfile.new(
             service: v['id'],
             action: [*JSON.parse("{\"a\":#{v['actions']}}")['a']]
           )
@@ -79,7 +79,7 @@ module LtiUtils
         tool_proxy.security_contract.tool_service = tool_services if tool_services.present?
 
         parameters = parameters.map do |var, val|
-          LtiUtils.models_all::Parameter.new(name: val['name'], variable: var)
+          LtiUtils.models.all::Parameter.new(name: val['name'], variable: var)
         end
 
         tool_profile.resource_handler.each do |rh|

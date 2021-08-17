@@ -6,6 +6,6 @@ class LtiTool < ActiveRecord::Base
   has_many :lti_sessions, dependent: :destroy
 
   def tool_proxy
-    LtiUtils.models_all::ToolProxy.from_json(tool_settings)
+    LtiUtils.models.get_tool_proxy_from_json(tool_settings)
   end
 end
