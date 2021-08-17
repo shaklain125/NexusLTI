@@ -1,3 +1,6 @@
+require 'ims/lti'
+require 'ims/lis'
+
 module LtiUtils
   class << self
     def services

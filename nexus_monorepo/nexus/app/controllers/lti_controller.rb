@@ -1,5 +1,3 @@
-require 'ims/lti'
-require 'ims/lis'
 class LtiController < ApplicationController
   include LtiHelper
 
