@@ -1,7 +1,7 @@
 module LtiUtils
   class RegHelper
     class << self
-      def auto_reg_format_caps(services, parameters)
+      def reg_format_caps(services, parameters)
         services = HashHelper.snake_case_sym_obj(services)
 
         new_services = services.each_with_object({}) do |s, h|
@@ -22,14 +22,20 @@ module LtiUtils
         { parameters: new_parameters, services: new_services }.symbolize_keys
       end
 
+      def get_and_save_reg_caps(reg)
+        caps = get_services_and_params(reg)
+        caps = reg_format_caps(caps[:services], caps[:capabilities][:parameters])
+        save_services_and_params(reg, caps[:services], caps[:parameters])
+      end
+
       def create_reg_obj(params, controller)
         registration_request = LtiUtils.models.generate_message(params)
         LtiRegistration.new(
           registration_request_params: registration_request.post_params,
           tool_proxy_json: LtiUtils::ToolProxyReg.new(registration_request, controller).tool_proxy.as_json
         )
-      rescue StandardError
-        raise LtiRegistration::Error, :failed_to_register_proxy
+      rescue StandardError => e
+        raise LtiRegistration::Error, e
       end
 
       def create_and_save_reg_obj(params, controller)
@@ -40,6 +46,36 @@ module LtiUtils
         raise LtiRegistration::Error, :failed_to_save_proxy
       end
 
+      def find_local_rh_by_path(path)
+        route = Rails.application.routes.recognize_path(path, method: 'POST')
+        return {} unless route
+        found_rh = LTI_RESOURCE_HANDLERS.select do |rh|
+          l_route = rh[:message][:route]
+          contr = l_route[:controller] == route[:controller]
+          act = l_route[:action] == route[:action]
+          contr && act
+        end
+        found_rh.first if found_rh.any?
+      rescue StandardError
+        {}
+      end
+
+      def all_caps_rh?(path)
+        all_caps = find_local_rh_by_path(path)[:all_capabilities]
+        all_caps.nil? ? false : all_caps == true
+      end
+
+      def get_all_rh_required_caps(reg)
+        all_caps = false
+        caps = reg.tool_proxy.tool_profile.resource_handler.each_with_object(Set.new) do |rh, s|
+          rh.message.each do |mh|
+            all_caps = true if !all_caps && all_caps_rh?(mh.path)
+            s.merge(mh.enabled_capability)
+          end
+        end
+        [caps.to_a, all_caps]
+      end
+
       def get_services_and_params(reg)
         tcp = reg.tool_consumer_profile
         tcp_url = tcp.id || reg.registration_request.tc_profile_url
@@ -48,9 +84,11 @@ module LtiUtils
           LtiUtils.models.all::Messages::BasicLTILaunchRequest::MESSAGE_TYPE,
           LtiUtils.models.all::Messages::ToolProxyReregistrationRequest::MESSAGE_TYPE
         ]
+        caps, all_caps = get_all_rh_required_caps(reg)
+        caps = tcp.capability_offered if all_caps
 
-        capabilities = tcp.capability_offered.each_with_object({ parameters: [] }) do |cap, hash|
-          hash[:parameters] << cap unless exclude_cap.include? cap
+        capabilities = caps.each_with_object({ parameters: [] }) do |cap, hash|
+          hash[:parameters] << cap unless exclude_cap.include?(cap)
         end
 
         services = tcp.services_offered.each_with_object([]) do |service, col|
@@ -83,7 +121,15 @@ module LtiUtils
         end
 
         tool_profile.resource_handler.each do |rh|
-          rh.message.each { |mh| mh.parameter = mh.parameter | parameters }
+          rh.message.each do |mh|
+            if all_caps_rh?(mh.path)
+              mh.parameter = mh.parameter | parameters
+            else
+              parameters.each do |p|
+                mh.parameter << p if mh.enabled_capability.include?(p.variable)
+              end
+            end
+          end
         end
 
         reg.update(tool_proxy_json: tool_proxy.to_json)

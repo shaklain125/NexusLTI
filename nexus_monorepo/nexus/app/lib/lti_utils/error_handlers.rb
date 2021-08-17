@@ -25,12 +25,7 @@ module LtiUtils
       end
 
       def lti_reg_error(ex)
-        "Reason: #{case ex.error
-                   when :missing_product_instance
-                     'Missing Product Instance Config'
-                   else
-                     "Unknown Error: #{ex.error.to_s.underscore.titleize}"
-                   end}"
+        "Reason: Unknown Error: #{ex.error.to_s.underscore.titleize}"
       end
     end
   end

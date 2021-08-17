@@ -100,12 +100,10 @@ Rails.application.routes.draw do
 
   ### LTI
   scope(controller: :lti) do
-    LTI_RESOURCE_HANDLERS.each do |config|
-      config[:messages].each do |message|
-        route = message[:route].symbolize_keys
-        path = route.delete(:path) || ':controller/:action'
-        post "lti/message/#{path}", route
-      end
+    LTI_RESOURCE_HANDLERS.each do |rh|
+      route = rh[:message][:route].symbolize_keys
+      path = route.delete(:path) || ':controller/:action'
+      post "lti/message/#{path}", route
     end
 
     get 'lti/login', action: :login, as: :lti_login

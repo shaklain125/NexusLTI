@@ -29,7 +29,7 @@ module LtiUtils
       decipher = decrypt(cipher)
       json = JSON.parse(decipher)
       HashHelper.snake_case_symbolize(json)
-    rescue StandardError => _e
+    rescue StandardError
       {}
     end
 

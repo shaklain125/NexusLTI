@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the resource handler suitable for display in the TC user interface."
+    },
+    "all_capabilities": {
+      "type": "boolean",
+      "description": "Get all capabilities for this ResourceHandler. Property [required_capabilities] will be ignored."
+    },
+    "message": {
+      "type": "object",
+      "description": "Defines the features of a message handler associated with the resource described by this ResourceHandler.",
+      "properties": {
+        "route": {
+          "type": "object",
+          "description": "This attribute specifies the path for an endpoint such as a MessageHandler. Typically, this path is relative to one of the base URL values defined in a BaseUrlChoice. In the case of a MessageHandler, the path may be an absolute path if the associated message type explicitly declares that an absolute path is allowed.",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "A custom path ending for the endpoint."
+            },
+            "controller": {
+              "type": "string",
+              "description": "The controller for the endpoint."
+            },
+            "action": {
+              "type": "string",
+              "description": "The controller action for the endpoint."
+            }
+          },
+          "required": ["controller", "action"]
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Specifies a custom parameter that is expected by the MessageHandler.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the parameter."
+              },
+              "fixed": {
+                "type": "string",
+                "description": "Denotes that the value of the parameter is fixed at the time of definition within the product profile. This value must be passed in each message of the associated message type."
+              },
+              "variable": {
+                "type": "string",
+                "description": "Denotes that the parameter has a variable value that is automatically substituted at run-time. The value of this attribute is the name for a variable whose value will be added to the message at run-time."
+              }
+            },
+            "required": ["name"],
+            "oneOf": [{ "required": ["fixed"] }, { "required": ["variable"] }]
+          }
+        },
+        "required_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "A capability that is enabled for messages handled by this MessageHandler.",
+          "items": {
+            "anyOf": [
+              { "type": "string" },
+              {
+                "enum": [
+                  "basic-lti-launch-request",
+                  "ContentItemSelectionRequest",
+                  "ToolProxyRegistrationRequest",
+                  "Context.id",
+                  "Context.title",
+                  "Context.label",
+                  "Context.id.history",
+                  "Context.sourcedId",
+                  "Context.longDescription",
+                  "Context.timeFrame.begin",
+                  "CourseSection.title",
+                  "CourseSection.label",
+                  "CourseSection.sourcedId",
+                  "CourseSection.longDescription",
+                  "CourseSection.timeFrame.begin",
+                  "CourseSection.timeFrame.end",
+                  "ResourceLink.id",
+                  "ResourceLink.title",
+                  "ResourceLink.description",
+                  "User.id",
+                  "User.username",
+                  "Person.name.full",
+                  "Person.name.given",
+                  "Person.name.family",
+                  "Person.email.primary",
+                  "Person.sourcedId",
+                  "Person.name.middle",
+                  "Person.address.street1",
+                  "Person.address.locality",
+                  "Person.address.country",
+                  "Person.address.timezone",
+                  "Person.phone.primary",
+                  "Person.phone.mobile",
+                  "Person.webaddress",
+                  "Membership.role",
+                  "Result.sourcedId",
+                  "Result.autocreate",
+                  "BasicOutcome.sourcedId",
+                  "BasicOutcome.url",
+                  "Moodle.Person.userGroupIds",
+                  "LineItem.url",
+                  "LineItems.url",
+                  "Results.url",
+                  "Scores.url",
+                  "ToolProxyBinding.memberships.url",
+                  "LtiLink.memberships.url",
+                  "ToolConsumerProfile.url",
+                  "ToolProxy.custom.url",
+                  "ToolProxyBinding.custom.url",
+                  "LtiLink.custom.url"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "required": ["route"]
+    }
+  },
+  "required": ["name", "message"]
+}

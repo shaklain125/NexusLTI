@@ -1,0 +1,14 @@
+{
+  "$schema": "../schema/resource_handler.json",
+  "name": "NexusLTI",
+  "all_capabilities": false,
+  "message": {
+    "route": {
+      "path": "/default",
+      "controller": "lti",
+      "action": "launch"
+    },
+    "parameters": [],
+    "required_capabilities": ["Membership.role", "Person.email.primary", "Person.name.full"]
+  }
+}

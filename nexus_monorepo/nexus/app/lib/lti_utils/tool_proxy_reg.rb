@@ -53,9 +53,12 @@ module LtiUtils
       @resource_handlers ||= LTI_RESOURCE_HANDLERS.map do |rh|
         LtiUtils.models.all::ResourceHandler.from_json(
           {
-            resource_type: { code: rh['code'] },
-            resource_name: rh['name'],
-            message: messages(rh['messages'])
+            resource_type: { code: 'default' },
+            resource_name: {
+              default_value: rh[:name],
+              key: 'default.name'
+            },
+            message: messages([rh[:message]])
           }
         )
       end
@@ -95,14 +98,15 @@ module LtiUtils
     def messages(messages)
       messages.map do |m|
         {
-          message_type: m['type'],
+          message_type: 'basic-lti-launch-request',
           path: Rails.application.routes.url_for(
             only_path: true,
             host: @controller.request.host_with_port,
-            controller: m['route']['controller'],
-            action: m['route']['action']
+            controller: m[:route][:controller],
+            action: m[:route][:action]
           ),
-          parameter: parameters(m['parameters'])
+          parameter: parameters(m[:parameters]),
+          enabled_capability: required_capabilities(m)
         }
       end
     end
@@ -113,6 +117,12 @@ module LtiUtils
       end
     end
 
-    private :messages, :parameters, :includes_split_secret?
+    def required_capabilities(message)
+      req_caps = message[:required_capabilities] || []
+      raise LtiRegistration::Error, :unsupported_capabilities_error unless (req_caps - (@tool_consumer_profile.capability_offered || [])).empty?
+      req_caps
+    end
+
+    private :messages, :parameters, :required_capabilities, :includes_split_secret?
   end
 end

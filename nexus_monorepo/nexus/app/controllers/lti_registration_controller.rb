@@ -20,9 +20,7 @@ class LtiRegistrationController < ApplicationController
 
   def auto_register
     reg = LtiUtils::RegHelper.create_reg_obj(params, self)
-    caps = LtiUtils::RegHelper.get_services_and_params(reg)
-    caps = LtiUtils::RegHelper.auto_reg_format_caps(caps[:services], caps[:capabilities][:parameters])
-    LtiUtils::RegHelper.save_services_and_params(reg, caps[:services], caps[:parameters])
+    LtiUtils::RegHelper.get_and_save_reg_caps(reg)
     register_proxy(reg)
   end
 
@@ -44,10 +42,13 @@ class LtiRegistrationController < ApplicationController
 
     raise LtiRegistration::Error, :failed_to_save_capabilities unless @registration
 
-    parameters = params['variable_parameters'] ? params['variable_parameters'].select { |_, v| v['enabled'] } : {}
-    services = params['service'] ? params['service'].select { |_, v| v['enabled'] } : {}
+    LtiUtils::RegHelper.get_and_save_reg_caps(@registration)
 
-    LtiUtils::RegHelper.save_services_and_params(@registration, services, parameters)
+    # LtiUtils::RegHelper.save_services_and_params(
+    #   @registration,
+    #   params['service'] || {},
+    #   params['variable_parameters'] || {}
+    # )
 
     redirect_to(lti_submit_proxy_path(@registration.id))
   end

@@ -1,20 +1,13 @@
-<script>
-  const checkAll = (check=true) => document.querySelectorAll("input[type='checkbox']").forEach((el) => {el.checked = check});
-</script>
 <div class="well">
   <h2>Nexus LTI Registration</h2>
-  <h4 style="margin-top:3rem; margin-bottom:3rem;">Select the capabilities you want to use:</h4>
-  <div class="form-group" style="margin-bottom:3rem;">
-    <button class="btn btn-sm btn-primary" onclick="checkAll()"><%= icon 'check' %> <span style="vertical-align: middle; margin-left:.5rem;">Check All</span></button>
-    <button class="btn btn-sm btn-primary" onclick="checkAll(false)"><%= icon 'minus' %> <span style="vertical-align: middle; margin-left:.5rem;">Uncheck All</span></button>
-  </div>
+  <h4 style="margin-top:3rem; margin-bottom:3rem;">Nexus requires the following capabilities:</h4>
   <form method="post" class="form-horizontal" action="<%= lti_save_capabilities_path %>">
     <input type="hidden" name="reg_id" value="<%= @registration.id %>"/>
-  <p><strong>Select which Services you would like to enable</strong></p>
+  <p><strong>Services</strong></p>
   <table class="table table-sm" style="background-color: white;">
     <thead>
       <tr>
-        <th class="text-center">Enable?</th>
+        <th class="text-center">Enabled</th>
         <th>Service Name</th>
         <th>Service Actions</th>
       </tr>
@@ -26,7 +19,7 @@
         <tr>
           <td class="text-center">
             <label style="display: block;">
-              <input type="checkbox" value="true" name="service[<%= service_name %>][enabled]"/>
+              <%= icon 'check' %>
             </label>
           </td>
           <td>
@@ -41,11 +34,11 @@
       <% end %>
     </tbody>
   </table>
-  <p><strong>Select which variable parameters you would like to pass along with their values</strong></p>
+  <p><strong>Parameters</strong></p>
   <table class="table table-sm" style="background-color: white;">
     <thead>
       <tr>
-        <th class="text-center">Enable?</th>
+        <th class="text-center">Enabled</th>
         <th>Returned Field Name</th>
         <th>LTI&trade; Variable</th>
       </tr>
@@ -56,7 +49,7 @@
         <tr>
           <td class="text-center" style="line-height: 2.2;">
             <label style="display: block;">
-              <input type="checkbox" value="true" name="variable_parameters[<%= cap %>][enabled]"/>
+              <%= icon 'check' %>
             </label>
           </td>
           <td>

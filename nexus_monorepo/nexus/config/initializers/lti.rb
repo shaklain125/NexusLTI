@@ -1,8 +1,14 @@
 LTI_RESOURCE_HANDLERS = []
 
-Dir[Rails.root.join('config', 'lti', 'resource_handlers', '*.yml')].each do |yml|
-  config = YAML.load(File.read(yml)).with_indifferent_access
-  LTI_RESOURCE_HANDLERS << config
+Dir[Rails.root.join('config', 'lti', 'resource_handlers', '*.json')].each do |rh|
+  rh = File.read(rh)
+  begin
+    rh = JSON.parse(rh).with_indifferent_access
+    rh.delete('$schema') if rh['$schema']
+    LTI_RESOURCE_HANDLERS << rh
+  rescue StandardError
+    next
+  end
 end
 
 LTI_DISABLE_DEVISE_NON_ADMIN_LOGIN = true
