@@ -8,4 +8,12 @@ class LtiTool < ActiveRecord::Base
   def tool_proxy
     LtiUtils.models.get_tool_proxy_from_json(tool_settings)
   end
+
+  def self.clean_up!
+    all.each do |tool|
+      tc_profile_url = tool.tool_proxy.tool_consumer_profile
+      tc_profile_exists = LtiUtils.services.tc_profile_exists?(tc_profile_url)
+      tool.destroy unless tc_profile_exists
+    end
+  end
 end

@@ -76,6 +76,12 @@ module LtiUtils
       def register_tool_proxy(registration_request, tool_proxy)
         new_tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
       end
+
+      def tc_profile_exists?(tc_profile_url)
+        !Faraday.new.get(tc_profile_url).body.empty?
+      rescue StandardError
+        false
+      end
     end
   end
 
