@@ -6,7 +6,7 @@ class LtiRegistrationController < ApplicationController
   protect_from_forgery with: :null_session, only: [:auto_register]
 
   def register
-    if LtiUtils::Session.https_session_enabled && request.ssl?
+    if LtiUtils::Session.https_session?(request) && session_exists?
       session[:lti_reg_token] = LtiUtils.encrypt_json({ reg_params: params })
       @registration = LtiUtils::RegHelper.create_reg_obj(params, self)
     else

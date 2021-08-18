@@ -49,22 +49,27 @@ module LtiUtils
         LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, nil))
       end
 
+      def https_session?(request)
+        is_https = request.ssl?
+        https_session_enabled && is_https
+      end
+
+      def http_session?(request)
+        is_https = request.ssl?
+        http_session_enabled && !is_https
+      end
+
       ## Raise
       def raise_if_invalid_session(cookies, session, request, params)
         id = session[:session_id]
         session_token = session[:lti_token]
         cookies_token = LtiUtils.get_cookie_token_only(cookies)
 
-        is_https = request.ssl?
-
-        is_https_session = https_session_enabled && is_https
-        is_http_session = http_session_enabled && !is_https
-
         is_https_session_valid = id && !session_token.nil? && cookies_token.nil?
         is_http_session_valid = ((id && session_token.nil?) || !id) && !cookies_token.nil?
 
-        https_valid = (is_https_session && is_https_session_valid)
-        http_valid = (is_http_session && is_http_session_valid)
+        https_valid = (https_session?(request) && is_https_session_valid)
+        http_valid = (http_session?(request) && is_http_session_valid)
 
         is_valid_session = (https_valid || http_valid)
 
