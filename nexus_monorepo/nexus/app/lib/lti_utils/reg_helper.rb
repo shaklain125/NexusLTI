@@ -28,6 +28,15 @@ module LtiUtils
         save_services_and_params(reg, caps[:services], caps[:parameters])
       end
 
+      def check_tc_profile_valid(params)
+        LtiUtils.services.get_tc_profile_from_tp_reg_service(LtiUtils.models.generate_message(params))
+        true
+      rescue StandardError
+        false
+      end
+
+      ## Create REG
+
       def create_reg_obj(params, controller)
         registration_request = LtiUtils.models.generate_message(params)
         LtiRegistration.new(
@@ -40,11 +49,15 @@ module LtiUtils
 
       def create_and_save_reg_obj(params, controller)
         reg = create_reg_obj(params, controller)
-        reg.save!
-        reg
-      rescue StandardError
-        raise LtiRegistration::Error, :failed_to_save_proxy
+        begin
+          reg.save!
+          reg
+        rescue StandardError
+          raise LtiRegistration::Error, :failed_to_save_proxy
+        end
       end
+
+      ## RH
 
       def find_local_rh_by_path(path)
         route = Rails.application.routes.recognize_path(path, method: 'POST')
@@ -60,6 +73,51 @@ module LtiUtils
         {}
       end
 
+      def filter_out_rh(params, reg)
+        rhandlers = params[:rh] ? params[:rh].select { |k, v| v[:enabled] && !find_local_rh_by_path(k).empty? } : {}
+        raise LtiRegistration::Error, :no_resource_handlers_selected if rhandlers.empty?
+        get_rh_from_reg(reg).select do |rh|
+          f = false
+          rh.message.each do |mh|
+            f = true if !f && rhandlers.keys.include?(mh.path)
+          end
+          f
+        end
+      end
+
+      def reg_update_rh(rh, reg)
+        tool_proxy = reg.tool_proxy
+        tool_proxy.tool_profile.resource_handler = rh
+        reg.update(tool_proxy_json: tool_proxy.to_json)
+      end
+
+      def filter_out_and_reg_update_rh(params, reg)
+        reg_update_rh(filter_out_rh(params, reg), reg)
+      end
+
+      def get_rh_from_reg(reg)
+        reg.tool_proxy.tool_profile.resource_handler
+      end
+
+      def get_rh_name_path_list(reg, controller)
+        list = get_rh_from_reg(reg).each_with_object([]) do |rh, l|
+          rh.message.each do |mh|
+            pth = mh.path
+            route = Rails.application.routes.recognize_path(pth, method: 'POST')
+            l << {
+              name: rh.resource_name.default_value,
+              path: pth,
+              route: route,
+              full_path: Rails.application.routes.url_for(
+                **route,
+                host: controller.request.host_with_port
+              )
+            }
+          end
+        end
+        list.to_a
+      end
+
       def all_caps_rh?(path)
         all_caps = find_local_rh_by_path(path)[:all_capabilities]
         all_caps.nil? ? false : all_caps == true
@@ -67,7 +125,7 @@ module LtiUtils
 
       def get_all_rh_required_caps(reg)
         all_caps = false
-        caps = reg.tool_proxy.tool_profile.resource_handler.each_with_object(Set.new) do |rh, s|
+        caps = get_rh_from_reg(reg).each_with_object(Set.new) do |rh, s|
           rh.message.each do |mh|
             all_caps = true if !all_caps && all_caps_rh?(mh.path)
             s.merge(mh.enabled_capability)
@@ -75,6 +133,8 @@ module LtiUtils
         end
         [caps.to_a, all_caps]
       end
+
+      ## Get and Set Caps, Register Proxy
 
       def get_services_and_params(reg)
         tcp = reg.tool_consumer_profile

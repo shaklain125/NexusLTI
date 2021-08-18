@@ -2,9 +2,8 @@ class LtiRegistrationController < ApplicationController
   include LtiRegHelper
 
   before_action :lti_reg_before
-  skip_before_action :verify_authenticity_token, only: [:register, :save_capabilities], if: :session_exists?
-  protect_from_forgery only: [:auto_register]
-  after_action :disable_xframe_header
+  skip_before_action :verify_authenticity_token, only: [:register, :auto_register, :save_capabilities], if: :lti_reg_req?
+  protect_from_forgery with: :null_session, if: :invalid_req?
 
   def register
     if session_exists?
@@ -16,6 +15,7 @@ class LtiRegistrationController < ApplicationController
     caps = LtiUtils::RegHelper.get_services_and_params(@registration)
     @capabilities = caps[:capabilities]
     @services_offered = caps[:services]
+    @rh_list = LtiUtils::RegHelper.get_rh_name_path_list(@registration, self)
   end
 
   def auto_register
@@ -37,18 +37,14 @@ class LtiRegistrationController < ApplicationController
                       session.delete(:lti_reg_token)
                       @registration
                     else
-                      params['reg_id'].empty? ? nil : LtiRegistration.find(params['reg_id'])
+                      params[:reg_id] && !params[:reg_id].empty? ? LtiRegistration.find(params[:reg_id]) : nil
                     end
 
     raise LtiRegistration::Error, :failed_to_save_capabilities unless @registration
 
-    LtiUtils::RegHelper.get_and_save_reg_caps(@registration)
+    LtiUtils::RegHelper.filter_out_and_reg_update_rh(params, @registration)
 
-    # LtiUtils::RegHelper.save_services_and_params(
-    #   @registration,
-    #   params['service'] || {},
-    #   params['variable_parameters'] || {}
-    # )
+    LtiUtils::RegHelper.get_and_save_reg_caps(@registration)
 
     redirect_to(lti_submit_proxy_path(@registration.id))
   end

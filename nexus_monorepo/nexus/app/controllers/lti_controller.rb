@@ -46,7 +46,7 @@ class LtiController < ApplicationController
     is_student = LtiUtils::LtiRole.verify_student(params)
     is_teacher = LtiUtils::LtiRole.verify_teacher(params)
 
-    user = LtiUtils::Session.create_student('student2@student.com', 'Student2') if is_student # create_student(person[:email], person[:name])
+    user = LtiUtils::Session.create_student(person[:email], person[:name]) if is_student # create_student('student2@student.com', 'Student2')
 
     user = User.find_by_email(config[:email]) if is_teacher # || 'teacher@teacher.com' person[:email] -- create_teacher(person[:email], person[:name])
 

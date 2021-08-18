@@ -24,6 +24,35 @@ module LtiUtils
         URIHelper.check_host(referrer, valid_referrers)
       end
 
+      def same_origin?(request)
+        ref = request.referrer
+        http_referer_uri = URIHelper.http_referer_uri(request)
+        origin = request.headers['origin']
+        origin_host = URIHelper.get_host(origin)
+        host = request.host
+
+        same_ohost_and_referrer = URIHelper.check_host(ref, [origin_host])
+
+        same_host_and_referrer = URIHelper.check_host(ref, [host])
+
+        same_host_and_referrer = if origin.nil? && host.nil?
+                                   false
+                                 elsif host.nil?
+                                   same_ohost_and_referrer
+                                 else
+                                   same_ohost_and_referrer || same_host_and_referrer
+                                 end
+
+        http_referer_and_host = http_referer_uri ? host == http_referer_uri.host : false
+
+        same_host_and_referrer && http_referer_and_host
+      end
+
+      def disable_xframe_header(response)
+        # response.headers.delete "X-Frame-Options"
+        response.headers.except!('X-Frame-Options')
+      end
+
       ## Raise 2
 
       def raise_if_invalid_token_ip(request, params)

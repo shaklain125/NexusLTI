@@ -1,8 +1,40 @@
+<script>
+  const checkAll = () => document.querySelectorAll("input[type='checkbox']").forEach((el) => {el.checked = !el.checked});
+</script>
 <div class="well">
   <h2>Nexus LTI Registration</h2>
-  <h4 style="margin-top:3rem; margin-bottom:3rem;">Nexus requires the following capabilities:</h4>
+  <div style="margin-top:3rem; margin-bottom:3rem;"></div>
   <form method="post" class="form-horizontal" action="<%= lti_save_capabilities_path %>">
     <input type="hidden" name="reg_id" value="<%= @registration.id %>"/>
+  <p><strong>Resource handlers</strong></p>
+  <table class="table table-sm" style="background-color: white;">
+    <thead>
+      <tr>
+        <th class="text-center" onclick="checkAll()" style="cursor:pointer;user-select: none;">Enable? <small><strong>(toggle)</strong></small></th>
+        <th>Resource Handler Name</th>
+        <th>Url</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rh_list.each do |rh| %>
+        <tr>
+          <td class="text-center" >
+            <label style="display: block;cursor:pointer;user-select: none;">
+              <input type="checkbox" checked value="true" style="cursor:pointer;user-select: none;" name="rh[<%= rh[:path] %>][enabled]"/>
+            </label>
+          </td>
+          <td>
+            <%= rh[:name] %>
+            <input type="hidden" name="rh[<%= rh[:path] %>][name]" value="<%= rh[:name] %>"/>
+          </td>
+          <td>
+            <code><%= rh[:full_path] %></code>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <h4 style="margin-top:3rem; margin-bottom:3rem;">Nexus requires the following capabilities:</h4>
   <p><strong>Services</strong></p>
   <table class="table table-sm" style="background-color: white;">
     <thead>
@@ -24,11 +56,9 @@
           </td>
           <td>
             <%= service_name %>
-            <input type="hidden" name="service[<%= service_name %>][id]" value="<%= service[:service] %>"/>
           </td>
           <td>
             <%= service_actions.join(', ') %>
-            <input type="hidden" name="service[<%= service_name %>][actions]" value="<%= service_actions %>"/>
           </td>
         </tr>
       <% end %>
@@ -54,7 +84,6 @@
           </td>
           <td>
             <%= cap_name %>
-            <input type="hidden" name="variable_parameters[<%= cap %>][name]" value="<%= cap_name %>"/>
           </td>
           <td style="line-height: 2.2;"><%= cap %></td>
         </tr>

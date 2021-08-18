@@ -7,8 +7,10 @@ class ApplicationController < ActionController::Base
   # Devise strong parameters
   before_action :configure_permitted_parameters, if: :devise_controller?
 
+  ## LTI
   before_action :lti_auth
   skip_before_action :verify_authenticity_token, if: :lti_request?
+  after_action :disable_xframe_header_lti
   rescue_from LtiLaunch::Error, with: :handle_lti_error
   rescue_from LtiRegistration::Error, with: :handle_lti_reg_error
 

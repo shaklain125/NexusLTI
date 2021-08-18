@@ -71,6 +71,8 @@ module LtiUtils
 
       def get_tc_profile_from_tp_reg_service(registration_request)
         new_tp_reg_service(registration_request).tool_consumer_profile
+      rescue StandardError
+        raise LtiRegistration::Error, :failed_to_retrieve_tool_consumer_profile
       end
 
       def register_tool_proxy(registration_request, tool_proxy)

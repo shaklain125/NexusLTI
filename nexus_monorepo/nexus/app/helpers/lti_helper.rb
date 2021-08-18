@@ -1,6 +1,7 @@
 module LtiHelper
   def handle_lti_error(ex)
     @is_lti_error = true
+    disable_xframe_header_lti
     @error = LtiUtils::ErrorHandlers.lti_error(ex)
 
     # Exit LTI on all other messages except the following
@@ -8,7 +9,8 @@ module LtiHelper
       :invalid_lti_role_access,
       :invalid_page_access,
       :invalid_aid,
-      :assigment_not_started
+      :assigment_not_started,
+      :invalid_lti_user
     ]
     no_exit_err_msgs << :invalid_origin if @is_student
     exit_lti unless no_exit_err_msgs.include?(ex.error)
@@ -23,6 +25,7 @@ module LtiHelper
 
   def handle_lti_reg_error(ex)
     @is_lti_reg_error = true
+    disable_xframe_header_lti
     @error = LtiUtils::ErrorHandlers.lti_reg_error(ex)
     render "lti_registration/error", status: 200
   end
@@ -52,7 +55,7 @@ module LtiHelper
     @teacher_ref_page = @is_teacher && LtiUtils::LtiRole.valid_teacher_referer(controller_name, action_name)
     @is_ref_page = @teacher_ref_page || @student_ref_page
 
-    @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(controller_name)
+    @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(params, controller_name, action_name)
 
     if @is_ref_page
       valid = true
@@ -84,21 +87,19 @@ module LtiHelper
 
   def lti_request?
     return if controller_name.to_sym == :lti_registration
-    http_referer_uri = LtiUtils::URIHelper.http_referer_uri(request)
-    same_host_and_referrer = LtiUtils::URIHelper.check_host(request.referrer, [LtiUtils::URIHelper.get_host(request.headers['origin'])])
-    http_referer_and_host = http_referer_uri ? request.host == http_referer_uri.host : false
+    is_same_origin = LtiUtils::Origin.same_origin?(request)
     valid_methods = %w[POST PATCH].include?(request.method)
     token = {}
     token[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
     is_student = LtiUtils::LtiRole.verify_student(token)
     is_teacher = LtiUtils::LtiRole.verify_teacher(token)
     is_valid_lti_role = is_student || is_teacher
-    is_valid_lti_role && valid_methods && same_host_and_referrer && http_referer_and_host
+    is_valid_lti_role && valid_methods && is_same_origin
   end
 
   def validate_token
     LtiUtils.invalid_token_raise(params)
-    LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name)
+    LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name, action_name)
     LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)
     LtiUtils::Session.raise_if_invalid_session(cookies, session, request, params)
     LtiUtils::Origin.raise_if_invalid_token_ip(request, params)
@@ -119,5 +120,9 @@ module LtiHelper
     LtiUtils::Session.logout_session(params, cookies, session) unless LtiUtils.invalid_token(params)
     sign_out(current_user)
     LtiUtils.delete_cookie_token(cookies, session)
+  end
+
+  def disable_xframe_header_lti
+    LtiUtils::Origin.disable_xframe_header(response) if @is_lti || @is_lti_reg || @is_lti_error || @is_lti_reg_error
   end
 end

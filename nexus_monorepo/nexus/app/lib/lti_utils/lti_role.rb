@@ -72,15 +72,20 @@ module LtiUtils
         verify_teacher(params) && verify_sys_admin(params)
       end
 
-      def valid_student_pages(controller_name)
-        [
+      def valid_student_pages(params, controller_name, action_name)
+        contr = [
           :submission
         ].include?(controller_name.to_sym)
+        if contr && action_name.to_sym == :new && !_check_token(params)
+          valid_aid = params[:aid] == LtiUtils.get_submission_token(params)[:aid]
+          return valid_aid
+        end
+        contr
       end
 
       ## Raise
-      def if_student_show_student_pages_raise(params, controller_name)
-        raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(params) && !valid_student_pages(controller_name)
+      def if_student_show_student_pages_raise(params, controller_name, action_name)
+        raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(params) && !valid_student_pages(params, controller_name, action_name)
       end
 
       def valid_student_referer(controller_name, action_name)
