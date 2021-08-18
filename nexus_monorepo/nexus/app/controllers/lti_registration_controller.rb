@@ -2,11 +2,11 @@ class LtiRegistrationController < ApplicationController
   include LtiRegHelper
 
   before_action :lti_reg_before
-  skip_before_action :verify_authenticity_token, only: [:register, :auto_register, :save_capabilities], if: :lti_reg_req?
-  protect_from_forgery with: :null_session, if: :invalid_req?
+  skip_before_action :verify_authenticity_token, only: [:register, :save_capabilities]
+  protect_from_forgery with: :null_session, only: [:auto_register]
 
   def register
-    if session_exists?
+    if LtiUtils::Session.https_session_enabled && request.ssl?
       session[:lti_reg_token] = LtiUtils.encrypt_json({ reg_params: params })
       @registration = LtiUtils::RegHelper.create_reg_obj(params, self)
     else

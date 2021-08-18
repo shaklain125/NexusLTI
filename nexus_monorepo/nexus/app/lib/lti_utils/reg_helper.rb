@@ -75,7 +75,10 @@ module LtiUtils
 
       def filter_out_rh(params, reg)
         rhandlers = params[:rh] ? params[:rh].select { |k, v| v[:enabled] && !find_local_rh_by_path(k).empty? } : {}
-        raise LtiRegistration::Error, :no_resource_handlers_selected if rhandlers.empty?
+        if rhandlers.empty?
+          reg.destroy
+          raise LtiRegistration::Error, :no_resource_handlers_selected
+        end
         get_rh_from_reg(reg).select do |rh|
           f = false
           rh.message.each do |mh|

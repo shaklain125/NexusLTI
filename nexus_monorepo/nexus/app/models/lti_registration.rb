@@ -15,6 +15,12 @@ class LtiRegistration < ActiveRecord::Base
     @tool_consumer_profile ||= LtiUtils.services.get_tc_profile_from_tp_reg_service(registration_request)
   end
 
+  def self.clean_up!
+    all.each do |reg|
+      reg.destroy if reg.lti_tool.nil?
+    end
+  end
+
   class Error < StandardError
     attr_reader :error
 
