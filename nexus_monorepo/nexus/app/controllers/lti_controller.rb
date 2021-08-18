@@ -76,6 +76,7 @@ class LtiController < ApplicationController
         LtiUtils.update_and_set_token(params, cookies, session, { config: { aid: config[:aid], cid: config[:cid] } })
         redirect_to action: :manage_assignment
       else
+        flash[:error] = "Assignment from LTI configuration does not exist" unless a_params_nil
         LtiUtils.update_and_set_token(params, cookies, session, { generator: true })
         redirect_to action: :login
       end
