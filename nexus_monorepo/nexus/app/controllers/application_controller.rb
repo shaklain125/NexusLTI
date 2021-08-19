@@ -14,6 +14,11 @@ class ApplicationController < ActionController::Base
   rescue_from LtiLaunch::Error, with: :handle_lti_error
   rescue_from LtiRegistration::Error, with: :handle_lti_reg_error
 
+  def redirect_to(*args, **kwargs)
+    LtiUtils::Session.set_http_flash(flash, request, params, cookies, session)
+    super(*args, **kwargs)
+  end
+
   protected
 
   def configure_permitted_parameters
@@ -35,10 +40,5 @@ class ApplicationController < ActionController::Base
       return nil
     end
     devise_current_user
-  end
-
-  def redirect_to(*args, **kwargs)
-    LtiUtils::Session.set_http_flash(flash, request, params, cookies, session)
-    super(*args, **kwargs)
   end
 end
