@@ -36,4 +36,9 @@ class ApplicationController < ActionController::Base
     end
     devise_current_user
   end
+
+  def redirect_to(*args, **kwargs)
+    LtiUtils::Session.set_http_flash(flash, request, params, cookies, session)
+    super(*args, **kwargs)
+  end
 end

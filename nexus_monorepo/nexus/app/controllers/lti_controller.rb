@@ -106,7 +106,7 @@ class LtiController < ApplicationController
 
     LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, u.id))
 
-    if LtiUtils.from_generator(params)
+    if LtiUtils.from_generator?(params)
       redirect_to action: :configure
       return
     end

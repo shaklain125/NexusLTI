@@ -1,12 +1,17 @@
 module LtiUtils
   class Session
     class << self
-      def https_session_enabled
+      def https_session_enabled?
         LTI_HTTPS_SESSION
       end
 
-      def http_session_enabled
+      def http_session_enabled?
         LTI_HTTP_SESSION
+      end
+
+      def http_cookie_enabled?
+        return false if LTI_HTTPS_SESSION
+        return LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP if LTI_HTTP_SESSION
       end
 
       def create_teacher(email, name)
@@ -49,14 +54,23 @@ module LtiUtils
         LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, nil))
       end
 
+      def set_http_flash(flash, request, params, cookies, session)
+        # Set lti flashes (inside lti_token) if it's http_session as flashes will not work without session
+        # Session flashes works in renders but not redirect_to
+        session_nil = session[:session_id].nil?
+        is_http_session = http_session?(request) && session_nil
+        lti_http_flash = !LtiUtils.invalid_token(params) && is_http_session && !flash.empty?
+        LtiUtils.flash(flash, params, cookies, session) if lti_http_flash
+      end
+
       def https_session?(request)
         is_https = request.ssl?
-        https_session_enabled && is_https
+        https_session_enabled? && is_https
       end
 
       def http_session?(request)
         is_https = request.ssl?
-        http_session_enabled && !is_https
+        http_session_enabled? && !is_https
       end
 
       ## Raise

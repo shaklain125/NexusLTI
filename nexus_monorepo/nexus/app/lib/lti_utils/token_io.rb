@@ -20,7 +20,7 @@ module LtiUtils
     end
 
     def get_cookie_token_only(cookies)
-      LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP ? cookies[:lti_token] : nil
+      LtiUtils::Session.http_cookie_enabled? ? cookies[:lti_token] : nil
     end
 
     def set_cookie_token(cookies, session, token_encrypted)
@@ -77,16 +77,34 @@ module LtiUtils
       get_token(params)[:submission]
     end
 
-    def from_generator(params)
+    def from_generator?(params)
       !get_token(params)[:generator].nil?
     end
 
-    def from_manage_assignment(params)
+    def from_manage_assignment?(params)
       !get_config(params).nil?
     end
 
-    def from_submission(params)
+    def from_submission?(params)
       !get_submission_token(params).nil?
+    end
+
+    def get_flashes(params)
+      get_token(params)[:flash] || []
+    end
+
+    def get_flashes!(params, cookies, session)
+      flashes = get_flashes(params)
+      update_and_set_token(params, cookies, session, { flash: [] })
+      flashes
+    end
+
+    def flash(flash, params, cookies, session)
+      update_and_set_token(params, cookies, session, { flash: flash })
+    end
+
+    def set_flashes(flash, flash_lti)
+      flash_lti.each { |t, m| flash[t] = m }
     end
 
     private :_get_token_param

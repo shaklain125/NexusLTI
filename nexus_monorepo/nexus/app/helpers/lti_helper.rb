@@ -76,10 +76,12 @@ module LtiHelper
     end
 
     @is_lti = LtiUtils.contains_token_param(params)
-    @is_config_generator = LtiUtils.from_generator(params) && !(controller_name.to_sym == :lti && (action_name.to_sym == :configure || action_name.to_sym == :login))
-    @is_manage_assignment = LtiUtils.from_manage_assignment(params) && !(controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment)
-    @is_submission = LtiUtils.from_submission(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
+    @is_config_generator = LtiUtils.from_generator?(params) && !(controller_name.to_sym == :lti && [:configure, :login].include?(action_name.to_sym))
+    @is_manage_assignment = LtiUtils.from_manage_assignment?(params) && !(controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment)
+    @is_submission = LtiUtils.from_submission?(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
     @submission_path = new_submission_path(aid: LtiUtils.get_submission_token(params)[:aid]) if @is_submission
+
+    LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(params, cookies, session) : [])
 
     validate_token unless @is_lms_or_launch
     block_controllers unless @is_lms_or_launch
