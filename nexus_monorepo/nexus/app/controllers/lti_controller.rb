@@ -87,6 +87,7 @@ class LtiController < ApplicationController
   end
 
   def login
+    LtiUtils.flash(flash, params, cookies, session) unless flash.empty?
     redirect_to action: :configure if current_user
   end
 
