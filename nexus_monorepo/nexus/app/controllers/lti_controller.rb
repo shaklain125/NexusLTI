@@ -11,7 +11,7 @@ class LtiController < ApplicationController
   end
 
   def check_launch
-    @lti_launch = LtiLaunch.check_launch(LtiUtils.models.parsed_lti_message(request))
+    @lti_launch = LtiLaunch.check_launch!(LtiUtils.models.parsed_lti_message(request))
   end
 
   def contains_token_param

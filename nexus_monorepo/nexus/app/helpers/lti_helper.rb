@@ -37,7 +37,7 @@ module LtiHelper
     @referrer = request.referrer
     @session_id = session[:session_id]
 
-    @is_lti_launch = LtiLaunch.check_launch_bool(LtiUtils.models.parsed_lti_message(request))
+    @is_lti_launch = LtiLaunch.check_launch?(LtiUtils.models.parsed_lti_message(request))
     @is_lms_origin = LtiUtils::Origin.check_if_is_lms_origin(request)
     @is_lms_referrer = LtiUtils::Origin.check_if_is_lms_referrer(request)
     @is_lms_or_launch = @is_lti_launch || @is_lms_origin
