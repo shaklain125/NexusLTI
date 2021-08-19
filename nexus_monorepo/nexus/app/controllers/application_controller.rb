@@ -35,7 +35,7 @@ class ApplicationController < ActionController::Base
 
   def current_user
     return LtiUtils::Session.get_current_user(params) unless LtiUtils.invalid_token(params)
-    if @is_lti_reg || @is_lti_reg_error
+    if devise_current_user && (@is_lti_reg || @is_lti_reg_error)
       sign_out(devise_current_user)
       return nil
     end

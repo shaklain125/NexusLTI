@@ -16,7 +16,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @rh_list.each do |rh| %>
+      <% (@rh_list || []).each do |rh| %>
         <tr>
           <td class="text-center" >
             <label style="display: block;cursor:pointer;user-select: none;">
@@ -45,7 +45,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @services_offered.each do |service| %>
+      <% (@services_offered || []).each do |service| %>
         <% service_name = service[:name] %>
         <% service_actions = service[:actions] %>
         <tr>
@@ -74,7 +74,7 @@
       </tr>
     </thead>
     <tbody>
-      <% @capabilities[:parameters].each do |cap| %>
+      <% (@capabilities ? @capabilities[:parameters] || [] : []).each do |cap| %>
         <% cap_name = cap.downcase.gsub('.', '_') %>
         <tr>
           <td class="text-center" style="line-height: 2.2;">
