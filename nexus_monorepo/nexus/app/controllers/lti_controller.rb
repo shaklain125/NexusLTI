@@ -114,7 +114,7 @@ class LtiController < ApplicationController
     aid_a, aid_valid = LtiUtils::Session.validate_assignment(aid, @cid)
     u = current_user
     is_invalid = u.nil? || aid_a.nil? || !aid_valid || !u
-    gen = LtiUtils.encrypt_json({ aid: aid })
+    gen = LtiUtils.encrypt_json({ aid: aid, created_at: DateTime.now.strftime('%s').to_i * 1000 })
     render json: { config: is_invalid ? conf.to_json : gen }
   rescue StandardError
     render json: { config: 'Error' }

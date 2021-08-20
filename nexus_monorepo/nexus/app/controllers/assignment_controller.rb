@@ -158,6 +158,9 @@ class AssignmentController < ApplicationController
           redirect_to lti_manage_assignment_path
         end
         return
+      elsif @is_config_generator
+        redirect_to lti_configure_path
+        return
       end
 
       redirect_to course
