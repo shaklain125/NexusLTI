@@ -151,8 +151,12 @@ class AssignmentController < ApplicationController
       end
 
       if @is_manage_assignment
-        LtiUtils.update_and_set_token(params, cookies, session, { generator: true, config: nil })
-        redirect_to lti_configure_path
+        if LtiUtils.get_conf(params)[:aid] == assignment.id.to_s
+          LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.gen_data_update(params))
+          redirect_to lti_configure_path
+        else
+          redirect_to lti_manage_assignment_path
+        end
         return
       end
 

@@ -33,6 +33,47 @@ module LtiUtils
         u
       end
 
+      def create_course(user, is_teacher, source_id:, title:, description:)
+        found_course = LtiCourse.where({ source: source_id })
+        if found_course.any?
+
+          found_course = found_course.first.course
+
+          found_course.title = title
+          found_course.description = description
+          found_course.save!
+
+          if found_course && is_teacher
+            teacher_found_in_course = found_course.teachers.include?(user)
+
+            if !teacher_found_in_course && !user.my_courses.include?(found_course)
+              found_course.teachers << user
+              found_course.save!
+              user.courses << found_course
+              user.save!
+            end
+          end
+
+          return found_course
+        end
+
+        return nil unless is_teacher
+
+        lti_course = LtiCourse.new(source: source_id)
+
+        course = Course.new(title: title, description: description)
+        course.teachers << user
+        course.save!
+
+        user.courses << course
+        user.save!
+
+        lti_course.course = course
+        lti_course.save!
+
+        course
+      end
+
       def create_session(user, params)
         return nil unless user
         session_exists = LtiSession.where({ user: user.id })
@@ -42,7 +83,7 @@ module LtiUtils
 
       def get_current_user(params)
         uid = LtiUtils.get_user_id(params)
-        return nil if LtiUtils::LtiRole.verify_teacher(params) && !uid
+        return nil unless uid
         lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: uid })
         return nil unless lti_session.any?
         lti_session.first.user
@@ -71,6 +112,34 @@ module LtiUtils
       def http_session?(request)
         is_https = request.ssl?
         http_session_enabled? && !is_https
+      end
+
+      def aid_valid?(aid, cid)
+        a = Assignment.where({ id: aid, course: cid })
+        a.any?
+      rescue StandardError
+        false
+      end
+
+      def validate_assignment(aid, cid)
+        return [nil, false] if aid.nil? || cid.nil? || !aid || !cid
+        aid_find = Assignment.where({ id: aid, course: cid }) unless aid.nil?
+        aid_valid = aid.nil? ? false : aid_find.any?
+        aid_a = aid_find.first unless aid.nil?
+        [aid_a, aid_valid]
+      rescue StandardError
+        [nil, false]
+      end
+
+      def get_course_id_from_pres_url(pres_url)
+        uri = URI(pres_url)
+        query = URI.decode_www_form(uri.query || '')
+        uri.query = URI.encode_www_form(query)
+        query = query.to_h
+        course_id = query['course'].to_s.strip
+        course_id.empty? ? nil : course_id
+      rescue StandardError
+        nil
       end
 
       ## Raise

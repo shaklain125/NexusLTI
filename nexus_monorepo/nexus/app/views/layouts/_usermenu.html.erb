@@ -29,11 +29,13 @@
       <% if Rails.configuration.github_com_oauth_id || current_user.ghe_profile_url %>
         <li role="separator" class="divider"></li>
       <% end %>
-      <li>
-        <%= link_to(@is_lti ? lti_logout_path : destroy_user_session_path) do %>
-          <%= icon 'sign-out' %> Logout</a>
-      <% end %>
-    </li>
+      <% unless @is_lti %>
+        <li>
+          <%= link_to(destroy_user_session_path) do %>
+            <%= icon 'sign-out' %> Logout</a>
+        <% end %>
+      </li>
+    <% end %>
   </ul>
 </li>
 <% else %>

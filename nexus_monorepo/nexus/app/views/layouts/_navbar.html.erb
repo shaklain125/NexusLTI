@@ -21,11 +21,11 @@
             <%= render 'layouts/coursemenu' %>
             <%= render 'layouts/assignmentmenu' %>
           <% end %>
-          <% if (@is_student || @is_teacher || !@is_lti) && except_cond %>
+          <% if (@is_student || !@is_lti) && except_cond %>
             <%= render 'layouts/submissionmenu' %>
           <% end %>
         </ul>
-        <% if (@is_teacher || !@is_lti) && except_cond %>
+        <% if (!@is_teacher || !@is_lti) && except_cond %>
           <ul class="nav navbar-nav navbar-right">
             <% if user_signed_in? && current_user.admin? %>
               <li>

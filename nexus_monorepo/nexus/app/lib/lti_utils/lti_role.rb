@@ -83,9 +83,52 @@ module LtiUtils
         contr
       end
 
+      def valid_teacher_pages(params, controller_name, action_name)
+        controller_name = controller_name.to_sym
+        action_name = action_name.to_sym
+        valid = true
+        config = LtiUtils.get_conf(params)
+        aid = config[:aid]
+        cid = config[:cid]
+
+        case controller_name
+        when :pages
+          invalid = [
+            :admin_panel,
+            :user_list
+          ].include?(action_name)
+          valid = !invalid
+        when :user, :access_token, :marking_tool, :audit_item
+          valid = false
+        when :course
+          invalid = [
+            :new,
+            :destroy,
+            :create,
+            :edit,
+            :update
+            # :index
+          ].include?(action_name)
+          valid = !invalid
+          valid = params[:id] == cid if params[:id] && action_name != :mine && valid
+        when :assignment
+          valid = params[:cid] == cid if params[:cid] && action_name == :new
+          valid = Session.aid_valid?(params[:id], cid) if params[:id] && (action_name != :mine)
+        when :deadline_extension
+          valid = Session.aid_valid?(params[:aid], cid) if params[:aid] && action_name == :new
+        end
+
+        valid
+      end
+
       ## Raise
       def if_student_show_student_pages_raise(params, controller_name, action_name)
         raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(params) && !valid_student_pages(params, controller_name, action_name)
+      end
+
+      ## Raise
+      def if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
+        raise LtiLaunch::Error, :invalid_lti_role_teacher_access if verify_teacher(params) && !valid_teacher_pages(params, controller_name, action_name)
       end
 
       def valid_student_referer(controller_name, action_name)

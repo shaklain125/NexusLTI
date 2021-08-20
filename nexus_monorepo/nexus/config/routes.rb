@@ -106,9 +106,6 @@ Rails.application.routes.draw do
       post "lti/message/#{path}", route
     end
 
-    get 'lti/login', action: :login, as: :lti_login
-    post 'lti/login', action: :login_post, as: :lti_login_post
-    get 'lti/logout', action: :logout, as: :lti_logout
     get 'lti/exit', action: :exit, as: :lti_exit
 
     get 'lti/configure', action: :configure, as: :lti_configure

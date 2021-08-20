@@ -3,11 +3,26 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-alerts@1.2.2/bootstrap-alerts.min.js"></script>
 <script>
   $(document).ready(function () {
+  
+    const find_styles = (class_name) =>
+      Array.from(document.styleSheets)
+        .map((s) => Array.from(s.cssRules).filter(({ selectorText }) => selectorText == class_name))
+        .filter((v) => v.length)
+        .map((s) =>
+          s.map(({ selectorText, cssText, style }) => ({
+            selectorText,
+            cssText,
+            style,
+          }))
+        )
+        .flat();
+  
+    $('.sep-or').css('background', find_styles('.well')[0].style.backgroundColor)
+  
     var req_busy = false;
-    var course_link = `<%= new_assignment_path(cid: ':id') %>`;
   
     const config_textarea = 'textarea#config';
-    const { a, c } = { a: 'select.assignment_select', c: 'select.course_select' };
+    const { a, c } = { a: 'select.assignment_select' };
   
     const clearSelection = () => {
       if (window.getSelection) {
@@ -56,55 +71,31 @@
         }, 5000);
       }
     });
-  
-    $('button.create_btn').on('click', () => {
-      const course = $(c).val();
-      if (!isNaN(course)) {
-        window.location.href = course_link.replace(':id', course);
-      } else {
-        $('#create_alert').html('');
-        $('#create_alert').bootstrapAlert({
-          type: 'danger',
-          dismissible: false,
-          message: `<%= icon 'exclamation-triangle' %><span style="vertical-align: middle; margin-left:.5rem;"> No course has been selected</span>`,
-        });
-        setTimeout(() => {
-          $('#create_alert').html('');
-        }, 5000);
-      }
-    });
   });
 </script>
 <div class="well">
   <h2>LTI - Configuration Generator</h2>
   <hr>
+  <h5 class="course-title" style="margin-bottom:3rem"><%= icon 'book' %> <%= link_to @course.title, @course %></h5>
   <div class ="form-horizontal">
     <div class="form-group">
+      <div class="col-lg-12" style="margin-bottom:.25rem">
+        <% if @cid %>
+          <%= link_to(new_assignment_path(cid: @cid)) do %>
+            <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="form-group">
       <div class="col-lg-12">
-        <div class="row" style="display:flex; align-items:center; justify-content:space-between;">
-          <div class="col-md-12 col-sm-12 col-xs-12">
-            <select class="form-control course_select">
-              <option selected>Select a course</option>
-              <% current_user.my_courses.each do |c| %>
-                <option value="<%= c.id %>"><%= c.title %></option>
-              <% end %>
-            </select>
-          </div>
-          <div class="col-md-2" style="display: flex;justify-content: flex-end;padding-left: 0;margin-left: 0;">
-            <button type="button" name="button" class="btn btn-sm btn-primary create_btn"><%= icon 'plus-circle' %> Create Assignment</button>
-          </div>
+        <div class="row" style="width: 100%;text-align: center; border-bottom: 1px solid #bdbdbd; line-height: 0.1em; margin: 1.5rem 0 1.5rem;">
+          <span class="sep-or" style="padding:0 1rem;">OR</span>
         </div>
       </div>
     </div>
     <div class="form-group">
-      <div class="col-lg-12" style="display: flex;align-items: center;justify-content: center;">
-        <div class="row" style="display:flex; align-items:center;">
-          <span style="">OR</span>
-        </div>
-      </div>
-    </div>
-    <div class="form-group">
-      <div class="col-md-12 col-sm-12 col-xs-12">
+      <div class="col-md-12 col-sm-12 col-xs-12" style="margin-top:.5rem">
         <select class="form-control assignment_select">
           <option selected>Select an Assignment</option>
           <% current_user.assignments.each do |a| %>

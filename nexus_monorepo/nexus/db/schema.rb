@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20210805200216) do
+ActiveRecord::Schema.define(version: 20210819202920) do
 
   create_table "access_tokens", force: :cascade do |t|
     t.string   "access_token", null: false
@@ -109,6 +109,13 @@ ActiveRecord::Schema.define(version: 20210805200216) do
 
   add_index "intermediate_marks", ["marking_tool_id"], name: "index_intermediate_marks_on_marking_tool_id"
   add_index "intermediate_marks", ["submission_id"], name: "index_intermediate_marks_on_submission_id"
+
+  create_table "lti_courses", force: :cascade do |t|
+    t.string   "source"
+    t.string   "course_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "lti_launches", force: :cascade do |t|
     t.integer  "lti_tool_id"

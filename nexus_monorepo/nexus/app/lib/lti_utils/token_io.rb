@@ -70,23 +70,27 @@ module LtiUtils
     end
 
     def get_config(params)
-      get_token(params)[:config]
+      get_token(params)[:config] || {}
+    end
+
+    def get_gen(params)
+      get_token(params)[:generator] || {}
     end
 
     def get_submission_token(params)
-      get_token(params)[:submission]
+      get_token(params)[:submission] || {}
     end
 
     def from_generator?(params)
-      !get_token(params)[:generator].nil?
+      !get_gen(params).empty?
     end
 
     def from_manage_assignment?(params)
-      !get_config(params).nil?
+      !get_config(params).empty?
     end
 
     def from_submission?(params)
-      !get_submission_token(params).nil?
+      !get_submission_token(params).empty?
     end
 
     def get_flashes(params)
@@ -105,6 +109,22 @@ module LtiUtils
 
     def set_flashes(flash, flash_lti)
       flash_lti.each { |t, m| flash[t] = m }
+    end
+
+    def gen_data_update(params)
+      { generator: { cid: get_config(params)[:cid] }, config: nil }
+    end
+
+    def get_conf(params)
+      d = {}
+      if from_generator?(params)
+        d = get_gen(params)
+      elsif from_manage_assignment?(params)
+        d = get_config(params)
+      elsif from_submission?(params)
+        d = get_submission_token(params)
+      end
+      d
     end
 
     private :_get_token_param

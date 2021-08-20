@@ -19,5 +19,7 @@ LTI_VALID_LMS_ORIGIN_HOSTS = [
 
 LTI_CIPHER_SECRET = '8cb13f93bf4b9bd12846d08c8814755d35fea3ff491bf08a0bbf381fe9a80892703ee58b072c18acc376d72b0d42ad392e42c63309e46e3aff63b450c396520d'.freeze
 
+LTI_RH_ALL_CAPS = LtiUtils::RHHelper.all_caps!.freeze
+
 LtiTool.clean_up!
 LtiRegistration.clean_up!

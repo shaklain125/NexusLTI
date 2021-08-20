@@ -9,6 +9,14 @@
       "action": "launch"
     },
     "parameters": [],
-    "required_capabilities": ["Membership.role", "Person.email.primary", "Person.name.full"]
+    "required_capabilities": [
+      "Membership.role",
+      "Person.email.primary",
+      "Person.name.full",
+      "CourseSection.title",
+      "CourseSection.longDescription",
+      "CourseSection.label",
+      "CourseSection.sourcedId"
+    ]
   }
 }

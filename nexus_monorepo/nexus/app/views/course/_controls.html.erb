@@ -7,15 +7,16 @@
       <%= link_to(enrolment_list_path, id: @course.id) do %>
         <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'list' %> Enrolment List <span class="badge"><%= @course.students.size %></span></button>
       <% end %>
-      <%= link_to(edit_course_path(id: @course.id)) do %>
-        <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'edit' %> Edit Course</button>
+      <% if (!@is_teacher || !@is_lti) %>
+        <%= link_to(edit_course_path(id: @course.id)) do %>
+          <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'edit' %> Edit Course</button>
+        <% end %>
       <% end %>
     <% end %>
-
     <% if current_user.enrolled_in?(@course.id) && !@course.taught_by?(current_user) %>
       <%= link_to(unenrol_path, id: @course.id) do %>
         <button type="button" class="btn btn-primary"><%= icon 'sign-out' %> Unenrol</button>
       <% end %>
-  <% end %>
+    <% end %>
   </div>
 <% end %>

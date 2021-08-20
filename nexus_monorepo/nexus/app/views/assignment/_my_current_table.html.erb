@@ -12,6 +12,9 @@
     </thead>
     <tbody>
       <% current_user.assignments.started.each do |a| %>
+        <% if @is_lti && a.course.id.to_s != @cid %>
+          <% next %>
+        <% end %>
         <tr>
           <th scope="row"><%= link_to a.title, a %></th>
           <td><%= link_to a.course.title, a.course %></td>

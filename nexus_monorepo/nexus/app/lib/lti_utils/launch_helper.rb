@@ -45,12 +45,8 @@ module LtiUtils
       keys.all? { |k| custom.key? k }
     end
 
-    def required_custom_params
-      [
-        :person_email_primary,
-        :person_name_full,
-        :membership_role
-      ]
+    def required_custom_params(request)
+      RHHelper.get_rh_caps_sym(request.url)
     end
   end
 end

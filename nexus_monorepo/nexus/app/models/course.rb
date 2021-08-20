@@ -8,8 +8,10 @@ class Course < ActiveRecord::Base
   has_many :assignments, dependent: :destroy
   has_many :audit_items
 
+  has_one :lti_course, dependent: :destroy
+
   validates :title, presence: true
-  validates :teaching_team_members, :length => { :minimum => 1 }
+  validates :teaching_team_members, length: { minimum: 1 }
 
   after_create do
     log("Course id #{id} (#{title}) created.")

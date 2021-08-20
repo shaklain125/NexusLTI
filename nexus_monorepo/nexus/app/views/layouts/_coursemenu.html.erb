@@ -16,16 +16,16 @@
       <li>
         <%= link_to(all_courses_path) do %>
           <%= icon 'list' %> All Courses</a>
-        <% end %>
-      </li>
-      <% if current_user.admin? %>
+      <% end %>
+    </li>
+    <% if current_user.admin? && (!@is_teacher || !@is_lti) %>
       <li role="separator" class="divider"></li>
       <li>
         <%= link_to(new_course_path) do %>
           <%= icon 'plus-circle' %> Create Course
         <% end %>
       </li>
-      <% end %>
-    </ul>
-  </li>
+    <% end %>
+  </ul>
+</li>
 <% end %>

@@ -5,6 +5,7 @@
 <div class="well">
   <h2>LTI - Manage Assignment</h2>
   <hr>
+  <h5 class="course-title" style="margin-bottom:2.5rem"><%= icon 'book' %> <%= link_to @assignment.course.title, @assignment.course %></h5>
   <h4><span style="font-weight:bold;">Name: </span> <%= @assignment.title %></h4>
   <% if @assignment.started? %>
     <h5><span style="font-weight:bold;">Started: </span><%= strftime_uk @assignment.start %></h5>

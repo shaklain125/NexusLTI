@@ -15,6 +15,8 @@ module LtiUtils
   require_dependency 'lti_utils/reg_helper'
   require_dependency 'lti_utils/tool_proxy_reg'
 
+  require_dependency 'lti_utils/rh_helper'
+
   require_dependency 'lti_utils/token_io'
   require_dependency 'lti_utils/token_validation'
 end

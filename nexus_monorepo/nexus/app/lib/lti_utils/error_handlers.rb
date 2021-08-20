@@ -20,7 +20,11 @@ module LtiUtils
                    when :invalid_page_access
                      'Page access disabled'
                    else
-                     "Unknown Error: #{ex.error.to_s.underscore.titleize}"
+                     if ex.error.to_s.starts_with?('MSG:')
+                       ex.error.to_s[4..-1].strip
+                     else
+                       "Unknown Error: #{ex.error.to_s.underscore.titleize}"
+                     end
                    end}"
       end
 

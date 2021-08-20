@@ -15,7 +15,7 @@ class LtiRegistrationController < ApplicationController
     caps = LtiUtils::RegHelper.get_services_and_params(@registration)
     @capabilities = caps[:capabilities]
     @services_offered = caps[:services]
-    @rh_list = LtiUtils::RegHelper.get_rh_name_path_list(@registration, self)
+    @rh_list = LtiUtils::RHHelper.get_rh_name_path_list(@registration, self)
   end
 
   def auto_register
@@ -42,7 +42,7 @@ class LtiRegistrationController < ApplicationController
 
     raise LtiRegistration::Error, :failed_to_save_capabilities unless @registration
 
-    LtiUtils::RegHelper.filter_out_and_reg_update_rh(params, @registration)
+    LtiUtils::RHHelper.filter_out_and_reg_update_rh(params, @registration)
 
     LtiUtils::RegHelper.get_and_save_reg_caps(@registration)
 

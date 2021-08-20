@@ -10,9 +10,11 @@ module LtiHelper
       :invalid_page_access,
       :invalid_aid,
       :assigment_not_started,
-      :invalid_lti_user
+      :invalid_lti_user,
+      :invalid_lti_role_teacher_access
     ]
     no_exit_err_msgs << :invalid_origin if @is_student
+    # no_exit_err_msgs << :invalid_origin if @is_teacher
     exit_lti unless no_exit_err_msgs.include?(ex.error)
 
     if ex.error == :invalid_origin
@@ -80,6 +82,7 @@ module LtiHelper
     @is_manage_assignment = LtiUtils.from_manage_assignment?(params) && !(controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment)
     @is_submission = LtiUtils.from_submission?(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
     @submission_path = new_submission_path(aid: LtiUtils.get_submission_token(params)[:aid]) if @is_submission
+    @cid = LtiUtils.get_conf(params)[:cid]
 
     LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(params, cookies, session) : [])
 
@@ -102,6 +105,7 @@ module LtiHelper
   def validate_token
     LtiUtils.invalid_token_raise(params)
     LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name, action_name)
+    LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
     LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)
     LtiUtils::Session.raise_if_invalid_session(cookies, session, request, params)
     LtiUtils::Origin.raise_if_invalid_token_ip(request, params)

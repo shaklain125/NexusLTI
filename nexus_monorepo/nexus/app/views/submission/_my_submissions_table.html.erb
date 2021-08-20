@@ -1,6 +1,5 @@
 <% recent |= false %>
 <% subs = recent ? current_user.submissions[0..4] : current_user.submissions %>
-
 <% if current_user.submissions.empty? %>
   <p>You have not made any submissions yet.</p>
 <% else %>
@@ -15,13 +14,16 @@
     </thead>
     <tbody>
       <% subs.each do |s| %>
+        <% if @is_lti && s.assignment.course.id.to_s != @cid %>
+          <% next %>
+        <% end %>
         <tr>
           <th>
             <%= link_to s do %>
-            <%= pretty_datetime s.submitted %>
+              <%= pretty_datetime s.submitted %>
             <% end %>
             <% if s.late %>
-            <span class="label label-danger">Late</span>
+              <span class="label label-danger">Late</span>
             <% end %>
           </th>
           <td>

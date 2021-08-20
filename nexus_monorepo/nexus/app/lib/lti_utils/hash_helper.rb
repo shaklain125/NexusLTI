@@ -37,6 +37,16 @@ module LtiUtils
         value = value.map { |k, v| [k.to_s, v.is_a?(Hash) ? stringify(v) : v] }
         value.to_h
       end
+
+      def nested_hash_val(obj, key)
+        if obj.respond_to?(:key?) && obj.key?(key)
+          obj[key]
+        elsif obj.respond_to?(:each)
+          r = nil
+          obj.find { |*a| r = nested_hash_val(a.last, key) }
+          r
+        end
+      end
     end
   end
 end
