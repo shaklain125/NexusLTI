@@ -106,8 +106,6 @@ Rails.application.routes.draw do
       post "lti/message/#{path}", route
     end
 
-    get 'lti/exit', action: :exit, as: :lti_exit
-
     get 'lti/configure', action: :configure, as: :lti_configure
     post 'lti/configure/generate', action: :configure_generate, as: :lti_configure_generate
     get 'lti/manage_assignment', action: :manage_assignment, as: :lti_manage_assignment

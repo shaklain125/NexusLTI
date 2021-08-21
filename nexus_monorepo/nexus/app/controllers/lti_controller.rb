@@ -68,14 +68,14 @@ class LtiController < ApplicationController
     aid = config[:aid]
     cid = course.id.to_s
 
-    LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
+    LtiUtils.update_and_set_token(self, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
 
     aid_a, aid_valid = LtiUtils::Session.validate_assignment(aid, cid)
 
     if is_student
       if aid_valid
         if aid_a.started?
-          LtiUtils.update_and_set_token(params, cookies, session, { submission: { aid: aid, cid: cid } })
+          LtiUtils.update_and_set_token(self, { submission: { aid: aid, cid: cid } })
           redirect_to new_submission_path(aid: aid)
         else
           raise LtiLaunch::Error, :assigment_not_started
@@ -86,21 +86,18 @@ class LtiController < ApplicationController
       return
     elsif is_teacher
       if aid_valid
-        LtiUtils.update_and_set_token(params, cookies, session, { config: { aid: aid, cid: cid } })
+        LtiUtils.update_and_set_token(self, { config: { aid: aid, cid: cid } })
         redirect_to action: :manage_assignment
       else
         flash[:error] = "Assignment from LTI configuration does not exist" unless aid.nil?
-        LtiUtils.update_and_set_token(params, cookies, session, { generator: { cid: cid } })
+        LtiUtils.update_and_set_token(self, { generator: { cid: cid } })
         redirect_to action: :configure
       end
       return
     end
 
-    redirect_to action: :exit
-  end
-
-  def exit
     exit_lti
+
     redirect_to root_path
   end
 
@@ -120,11 +117,10 @@ class LtiController < ApplicationController
   end
 
   def manage_assignment
-    aid = LtiUtils.get_config(params)[:aid]
-    @assignment, aid_valid = LtiUtils::Session.validate_assignment(aid, @cid)
+    @assignment, aid_valid = LtiUtils::Session.validate_assignment(@aid, @cid)
     unless aid_valid
       flash[:error] = "Assignment from LTI configuration does not exist"
-      LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.gen_data_update(params))
+      LtiUtils.update_and_set_token(self, LtiUtils.gen_data_update(params))
       redirect_to action: :configure
     end
   end

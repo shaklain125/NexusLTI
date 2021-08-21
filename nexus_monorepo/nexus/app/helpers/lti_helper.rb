@@ -4,21 +4,8 @@ module LtiHelper
     disable_xframe_header_lti
     @error = LtiUtils::ErrorHandlers.lti_error(ex)
 
-    # Exit LTI on all other messages except the following
-    no_exit_err_msgs = [
-      :invalid_lti_role_access,
-      :invalid_page_access,
-      :invalid_aid,
-      :assigment_not_started,
-      :invalid_lti_user,
-      :invalid_lti_role_teacher_access,
-      :course_not_found
-    ]
-    no_exit_err_msgs << :invalid_origin if @is_student
-    # no_exit_err_msgs << :invalid_origin if @is_teacher
-    exit_lti unless no_exit_err_msgs.include?(ex.error)
-
     if ex.error == :invalid_origin
+      exit_lti unless @is_student
       redirect_to root_path
       return
     end
@@ -42,7 +29,6 @@ module LtiHelper
 
     @is_lti_launch = LtiLaunch.check_launch?(LtiUtils.models.parsed_lti_message(request))
     @is_lms_origin = LtiUtils::Origin.check_if_is_lms_origin(request)
-    @is_lms_referrer = LtiUtils::Origin.check_if_is_lms_referrer(request)
     @is_lms_or_launch = @is_lti_launch || @is_lms_origin
 
     if @is_lms_or_launch
@@ -54,39 +40,24 @@ module LtiHelper
     @is_teacher = LtiUtils::LtiRole.verify_teacher(params)
     @is_student = LtiUtils::LtiRole.verify_student(params)
 
-    @student_ref_page = @is_student && LtiUtils::LtiRole.valid_student_referer(controller_name, action_name)
-    @teacher_ref_page = @is_teacher && LtiUtils::LtiRole.valid_teacher_referer(controller_name, action_name)
-    @is_ref_page = @teacher_ref_page || @student_ref_page
-
-    @is_valid_student_page = @is_student && LtiUtils::LtiRole.valid_student_pages(params, controller_name, action_name)
-
-    if @is_ref_page
-      valid = true
-      if LtiUtils::Origin.lms_hosts.any?
-        valid = false if !@is_lms_referrer && !@is_valid_student_page
-      elsif !@is_valid_student_page
-        valid = false
-      end
-
-      unless valid
-        params.delete(:lti_token)
-        @is_teacher = false
-        @is_student = false
-        @is_ref_page = false
-        @student_ref_page = false
-        @teacher_ref_page = false
-      end
-    end
+    params.delete(:lti_token) if !@is_lms_or_launch && !@is_teacher && !@is_student
 
     @is_lti = LtiUtils.contains_token_param(params)
-    @is_config_generator = LtiUtils.from_generator?(params) && !(controller_name.to_sym == :lti && [:configure, :login].include?(action_name.to_sym))
-    @is_manage_assignment = LtiUtils.from_manage_assignment?(params) && !(controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment)
-    @is_submission = LtiUtils.from_submission?(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
-    @submission_path = new_submission_path(aid: LtiUtils.get_submission_token(params)[:aid]) if @is_submission
-    @cid = LtiUtils.get_conf(params)[:cid]
-    @cid_course = LtiUtils::Session.get_course(params)
 
-    LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(params, cookies, session) : [])
+    contr_act = { controller_name: controller_name, action_name: action_name }
+    @is_config_generator = LtiUtils.from_generator?(params, **contr_act)
+    @is_manage_assignment = LtiUtils.from_manage_assignment?(params, **contr_act)
+    @is_submission = LtiUtils.from_submission?(params, **contr_act)
+
+    @aid, @cid = LtiUtils.get_conf(params, :aid, :cid)
+    @cid_course = LtiUtils::Session.get_course(params)
+    @submission_path = new_submission_path(aid: @aid) if @is_submission
+
+    @manage_only_current_cid = LtiUtils::Session.manage_only_current_cid?
+    @manage_only_current_aid = LtiUtils::Session.manage_only_current_aid?
+    @allow_course_delete = LtiUtils::Session.allow_course_delete?
+
+    LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(self) : [])
 
     validate_token unless @is_lms_or_launch
     block_controllers unless @is_lms_or_launch
@@ -107,11 +78,11 @@ module LtiHelper
   def validate_token
     LtiUtils.invalid_token_raise(params)
     LtiUtils::Session.raise_if_course_not_found(@cid_course) if @cid && request.referrer
-    LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name, action_name)
-    LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)
-    LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
-    LtiUtils::Session.raise_if_invalid_session(cookies, session, request, params)
-    LtiUtils::Origin.raise_if_invalid_token_ip(request, params)
+    LtiUtils::LtiRole.if_student_show_student_pages_raise(self)
+    LtiUtils::Origin.raise_if_null_referrer_and_lti(self)
+    LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(self)
+    LtiUtils::Session.raise_if_invalid_session(self)
+    LtiUtils::Origin.raise_if_invalid_token_ip(self)
   end
 
   def block_controllers
@@ -126,7 +97,7 @@ module LtiHelper
   end
 
   def exit_lti
-    LtiUtils::Session.logout_session(params, cookies, session) unless LtiUtils.invalid_token(params)
+    LtiUtils::Session.logout_session(self) unless LtiUtils.invalid_token(params)
     sign_out(current_user)
     LtiUtils.delete_cookie_token(cookies, session)
   end

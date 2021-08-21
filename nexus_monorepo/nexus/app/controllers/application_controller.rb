@@ -15,7 +15,7 @@ class ApplicationController < ActionController::Base
   rescue_from LtiRegistration::Error, with: :handle_lti_reg_error
 
   def redirect_to(*args, **kwargs)
-    LtiUtils::Session.set_http_flash(flash, request, params, cookies, session)
+    LtiUtils::Session.http_flash(self)
     super(*args, **kwargs)
   end
 

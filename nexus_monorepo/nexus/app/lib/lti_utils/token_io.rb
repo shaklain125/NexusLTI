@@ -39,9 +39,10 @@ module LtiUtils
       get_token(params).merge(json)
     end
 
-    def update_and_set_token(params, cookies, session, json)
+    def update_and_set_token(contr, json)
+      params = contr.params
       params[:lti_token] = encrypt_json(update_merge_token(params, json))
-      set_cookie_token(cookies, session, params[:lti_token])
+      set_cookie_token(contr.request.cookies, contr.session, params[:lti_token])
     end
 
     def delete_cookie_token(cookies, session)
@@ -56,6 +57,8 @@ module LtiUtils
     def delete_cookie_token_not_session(cookies)
       CookieHelper.delete_lti_cookie(cookies, :lti_token) unless cookies[:lti_token].nil?
     end
+
+    ## DATA IO
 
     def get_tool_id(params)
       get_token(params)[:tool_id]
@@ -81,30 +84,39 @@ module LtiUtils
       get_token(params)[:submission] || {}
     end
 
-    def from_generator?(params)
-      !get_gen(params).empty?
+    def from_generator?(params, controller_name: nil, action_name: nil)
+      from = !get_gen(params).empty?
+      return from if controller_name.nil? || action_name.nil?
+      from_path = controller_name.to_sym == :lti && action_name.to_sym == :configure
+      from && !from_path
     end
 
-    def from_manage_assignment?(params)
-      !get_config(params).empty?
+    def from_manage_assignment?(params, controller_name: nil, action_name: nil)
+      from = !get_config(params).empty?
+      return from if controller_name.nil? || action_name.nil?
+      from_path = controller_name.to_sym == :lti && action_name.to_sym == :manage_assignment
+      from && !from_path
     end
 
-    def from_submission?(params)
-      !get_submission_token(params).empty?
+    def from_submission?(params, controller_name: nil, action_name: nil)
+      from = !get_submission_token(params).empty?
+      return from if controller_name.nil? || action_name.nil?
+      from_path = controller_name.to_sym == :submission && action_name.to_sym == :new
+      from && !from_path
     end
 
     def get_flashes(params)
       get_token(params)[:flash] || []
     end
 
-    def get_flashes!(params, cookies, session)
-      flashes = get_flashes(params)
-      update_and_set_token(params, cookies, session, { flash: [] })
+    def get_flashes!(contr)
+      flashes = get_flashes(contr.params)
+      update_and_set_token(contr, { flash: [] })
       flashes
     end
 
-    def flash(flash, params, cookies, session)
-      update_and_set_token(params, cookies, session, { flash: flash })
+    def flash(contr)
+      update_and_set_token(contr, { flash: contr.flash })
     end
 
     def set_flashes(flash, flash_lti)
@@ -115,7 +127,7 @@ module LtiUtils
       { generator: { cid: get_config(params)[:cid] }, config: nil }
     end
 
-    def get_conf(params)
+    def get_conf(params, *attrs)
       d = {}
       if from_generator?(params)
         d = get_gen(params)
@@ -124,6 +136,7 @@ module LtiUtils
       elsif from_submission?(params)
         d = get_submission_token(params)
       end
+      return d.values_at(*attrs) unless attrs.empty?
       d
     end
 

@@ -98,19 +98,20 @@ module LtiUtils
         lti_session.first.user
       end
 
-      def logout_session(params, cookies, session)
+      def logout_session(contr)
+        params = contr.params
         lti_session = LtiSession.find_by_lti_tool_id(LtiUtils.get_tool_id(params))
         lti_session.delete if lti_session
-        LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.update_user_id(params, nil))
+        LtiUtils.update_and_set_token(contr, LtiUtils.update_user_id(params, nil))
       end
 
-      def set_http_flash(flash, request, params, cookies, session)
+      def http_flash(contr)
         # Set lti flashes (inside lti_token) if it's http_session as flashes will not work without session
         # Session flashes works in renders but not redirect_to
-        session_nil = session[:session_id].nil?
-        is_http_session = http_session?(request) && session_nil
-        lti_http_flash = !LtiUtils.invalid_token(params) && is_http_session && !flash.empty?
-        LtiUtils.flash(flash, params, cookies, session) if lti_http_flash
+        session_nil = contr.session[:session_id].nil?
+        is_http_session = http_session?(contr.request) && session_nil
+        lti_http_flash = !LtiUtils.invalid_token(contr.params) && is_http_session && !contr.flash.empty?
+        LtiUtils.flash(contr) if lti_http_flash
       end
 
       def https_session?(request)
@@ -123,8 +124,21 @@ module LtiUtils
         http_session_enabled? && !is_https
       end
 
+      def manage_only_current_cid?
+        LTI_TEACHER_MANAGE_ONLY_CURRENT_COURSE
+      end
+
+      def manage_only_current_aid?
+        LTI_TEACHER_MANAGE_ONLY_CURRENT_ASSIGNMENT
+      end
+
+      def allow_course_delete?
+        LTI_TEACHER_ALLOW_COURSE_DELETE
+      end
+
       def my_aid?(aid, params)
         return false unless aid
+        return aid.to_s == LtiUtils.get_conf(params)[:aid] if manage_only_current_aid?
         a = Assignment.find(aid.to_i)
         return false unless a
         my_cid?(a.course.id, params)
@@ -134,6 +148,7 @@ module LtiUtils
 
       def my_cid?(cid, params)
         return false unless cid
+        return cid.to_s == LtiUtils.get_conf(params)[:cid] if manage_only_current_cid?
         c = Course.find(cid.to_i)
         return false unless c
         get_user(params).my_courses.include?(c)
@@ -188,7 +203,11 @@ module LtiUtils
       end
 
       ## Raise
-      def raise_if_invalid_session(cookies, session, request, params)
+      def raise_if_invalid_session(contr)
+        request = contr.request
+        cookies = request.cookies
+        session = contr.session
+        params = contr.params
         id = session[:session_id]
         session_token = session[:lti_token]
         cookies_token = LtiUtils.get_cookie_token_only(cookies)

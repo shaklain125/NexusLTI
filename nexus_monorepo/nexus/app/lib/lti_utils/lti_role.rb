@@ -72,20 +72,26 @@ module LtiUtils
         verify_teacher(params) && verify_sys_admin(params)
       end
 
-      def valid_student_pages(params, controller_name, action_name)
-        contr = [
+      def valid_student_pages(contr)
+        params = contr.params
+        controller_name = contr.controller_name.to_sym
+        action_name = contr.action_name.to_sym
+        aid = contr.instance_variable_get('@aid')
+        valid_contr = [
           :submission
-        ].include?(controller_name.to_sym)
-        if contr && action_name.to_sym == :new && !_check_token(params)
-          valid_aid = params[:aid] == LtiUtils.get_submission_token(params)[:aid]
-          return valid_aid
-        end
-        contr
+        ].include?(controller_name)
+        return params[:aid] == aid if valid_contr && action_name == :new && !_check_token(params)
+        valid_contr
       end
 
-      def valid_teacher_pages(params, controller_name, action_name)
-        controller_name = controller_name.to_sym
-        action_name = action_name.to_sym
+      def valid_teacher_pages(contr)
+        params = contr.params
+        controller_name = contr.controller_name.to_sym
+        action_name = contr.action_name.to_sym
+        manage_only_current_cid = contr.instance_variable_get('@manage_only_current_cid')
+        manage_only_current_aid = contr.instance_variable_get('@manage_only_current_aid')
+        allow_course_delete = contr.instance_variable_get('@allow_course_delete')
+        cid = contr.instance_variable_get('@cid')
         valid = true
 
         case controller_name
@@ -100,18 +106,25 @@ module LtiUtils
         when :course
           invalid_actions = [
             :new,
-            # :destroy,
             :create,
             :edit,
             :update,
             :index
           ]
-          invalid_actions << :destroy unless LTI_ALLOW_COURSE_DELETE_BY_TEACHER
+          invalid_actions << :destroy unless allow_course_delete
+          invalid_actions << :mine if manage_only_current_cid
+          invalid_actions << :show if manage_only_current_aid && !manage_only_current_cid
           invalid = invalid_actions.include?(action_name)
           valid = !invalid
           valid = Session.my_cid?(params[:id], params) if params[:id] && action_name != :mine && valid
         when :assignment
-          valid = Session.my_cid?(params[:cid], params) if params[:cid] && action_name == :new
+          if params[:cid] && action_name == :new
+            valid = if manage_only_current_aid && !manage_only_current_cid
+                      params[:cid].to_s == cid
+                    else
+                      Session.my_cid?(params[:cid], params)
+                    end
+          end
           valid = Session.my_aid?(params[:id], params) if params[:id] && action_name != :mine
         when :deadline_extension
           valid = Session.my_aid?(params[:aid], params) if params[:aid] && action_name == :new
@@ -123,37 +136,13 @@ module LtiUtils
       end
 
       ## Raise
-      def if_student_show_student_pages_raise(params, controller_name, action_name)
-        raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(params) && !valid_student_pages(params, controller_name, action_name)
+      def if_student_show_student_pages_raise(contr)
+        raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(contr.params) && !valid_student_pages(contr)
       end
 
       ## Raise
-      def if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
-        raise LtiLaunch::Error, :invalid_lti_role_teacher_access if verify_teacher(params) && !valid_teacher_pages(params, controller_name, action_name)
-      end
-
-      def valid_student_referer(controller_name, action_name)
-        controller_name = controller_name.to_sym
-        action_name = action_name.to_sym
-        page_for_ref = false
-
-        case controller_name
-        when :submission
-          action_valid = [
-            :new
-          ].include?(action_name)
-          page_for_ref = action_valid
-        else
-          page_for_ref = false
-        end
-
-        page_for_ref
-      end
-
-      def valid_teacher_referer(controller_name, action_name)
-        controller_name = controller_name.to_sym
-        action_name = action_name.to_sym
-        false
+      def if_teacher_show_teacher_pages_raise(contr)
+        raise LtiLaunch::Error, :invalid_lti_role_teacher_access if verify_teacher(contr.params) && !valid_teacher_pages(contr)
       end
 
       private :_check_token, :_get_token

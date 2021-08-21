@@ -16,14 +16,6 @@ module LtiUtils
         referer_valid && origin_valid
       end
 
-      def check_if_is_lms_referrer(request)
-        referrer = request.referrer
-        return false unless referrer
-        valid_referrers = lms_hosts
-        return false unless valid_referrers.any?
-        URIHelper.check_host(referrer, valid_referrers)
-      end
-
       def same_origin?(request)
         ref = request.referrer
         http_referer_uri = URIHelper.http_referer_uri(request)
@@ -55,14 +47,17 @@ module LtiUtils
 
       ## Raise 2
 
-      def raise_if_invalid_token_ip(request, params)
+      def raise_if_invalid_token_ip(contr)
+        params = contr.params
+        r_ip = contr.request.remote_ip
         ip = LtiUtils.get_token_ip(params)
-        not_nil = request.remote_ip && ip
-        raise LtiLaunch::Error, :invalid_origin if ((not_nil && (request.remote_ip != ip)) || !not_nil) && LtiUtils.contains_token_param(params)
+        not_nil = r_ip && ip
+        raise LtiLaunch::Error, :invalid_origin if ((not_nil && (r_ip != ip)) || !not_nil) && LtiUtils.contains_token_param(params)
       end
 
-      def raise_if_null_referrer_and_lti(request, params)
-        referrer = request.referrer
+      def raise_if_null_referrer_and_lti(contr)
+        referrer = contr.request.referrer
+        params = contr.params
         raise LtiLaunch::Error, :invalid_origin if !referrer && LtiUtils.contains_token_param(params)
       end
     end
