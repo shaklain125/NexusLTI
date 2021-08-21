@@ -106,12 +106,12 @@ module LtiHelper
 
   def validate_token
     LtiUtils.invalid_token_raise(params)
-    LtiUtils::Session.raise_if_course_not_found(@cid_course)
     LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name, action_name)
     LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
     LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)
     LtiUtils::Session.raise_if_invalid_session(cookies, session, request, params)
     LtiUtils::Origin.raise_if_invalid_token_ip(request, params)
+    LtiUtils::Session.raise_if_course_not_found(@cid_course) if @cid
   end
 
   def block_controllers

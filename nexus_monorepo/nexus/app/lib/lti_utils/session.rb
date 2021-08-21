@@ -14,23 +14,32 @@ module LtiUtils
         return LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP if LTI_HTTP_SESSION
       end
 
-      def create_teacher(email, name)
-        u = User.find_by_email(email)
-        u ||= User.create(email: email,
-                          password: '12345678',
-                          password_confirmation: '12345678',
-                          name: name,
-                          admin: true)
+      def update_user_details(u, name)
+        return nil unless u
+        pw = Devise.friendly_token(32)
+        u.name = name
+        u.password = pw
+        u.password_confirmation = pw
+        u.save!
         u
       end
 
-      def create_student(email, name)
+      def create_user!(email, name, admin: false)
         u = User.find_by_email(email)
-        u ||= User.create(email: email,
-                          password: '12345678',
-                          password_confirmation: '12345678',
-                          name: name)
-        u
+        unless u
+          u = User.new
+          u.email = email
+          u.admin = admin
+        end
+        update_user_details(u, name)
+      end
+
+      def create_teacher(email, name)
+        create_user!(email, name, admin: true)
+      end
+
+      def create_student(email, name)
+        create_user!(email, name)
       end
 
       def create_course(user, is_teacher, source_id:, title:, description:)

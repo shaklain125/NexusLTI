@@ -36,6 +36,15 @@
             <%= render 'layouts/usermenu' %>
           </ul>
         <% end %>
+        <% if @is_lti && user_signed_in? %>
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <%= link_to('javascript:void(0)') do %>
+                <%= icon 'user' %><span style="margin-left:.8rem"><%= current_user.name %></span>
+              <% end %>
+            </li>
+          </ul>
+        <% end %>
       </div>
     <% end %>
   </div>
