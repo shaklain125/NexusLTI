@@ -23,16 +23,18 @@
               <button type="button" class="btn btn-xs btn-danger pull-right"><%= icon 'times' %> Delete</button>
             <% end %>
           <% end %>
-        </td>
+      </td>
       </tr>
     <% end %>
   </tbody>
 </table>
+
 <script>
-  function confirmDeletion() {
-    return confirm("This action will delete the course and all its assignments / submissions. Are you sure?");
-  }
+function confirmDeletion() {
+  return confirm("This action will delete the course and all its assignments / submissions. Are you sure?");
+}
 </script>
+
 <% if current_user.admin? %>
   <div class="center-controls">
     <%= link_to(new_course_path) do %>

@@ -29,13 +29,12 @@
       <% if Rails.configuration.github_com_oauth_id || current_user.ghe_profile_url %>
         <li role="separator" class="divider"></li>
       <% end %>
-      <li>
-        <%= link_to(destroy_user_session_path) do %>
-          <%= icon 'sign-out' %> Logout</a>
-      <% end %>
-    </li>
-  </ul>
-</li>
+      <li><%= link_to(destroy_user_session_path) do %>
+            <%= icon 'sign-out' %> Logout</a>
+          <% end %>
+      </li>
+    </ul>
+  </li>
 <% else %>
   <li>
     <%= link_to(user_omniauth_authorize_url(provider: :github)) do %>
