@@ -19,6 +19,8 @@ module LtiUtils
                      'Assigment has not started'
                    when :invalid_page_access
                      'Page access disabled'
+                   when :course_not_found
+                     'The current course cannot be found in Nexus'
                    else
                      if ex.error.to_s.starts_with?('MSG:')
                        ex.error.to_s[4..-1].strip

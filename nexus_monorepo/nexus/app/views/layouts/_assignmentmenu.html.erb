@@ -1,9 +1,10 @@
+<% obj = @is_lti && @cid_course ? @cid_course : current_user %>
 <% if user_signed_in? %>
   <li>
     <%= link_to my_assignments_path do %>
       Assignments
-      <% unless current_user.assignments.started.empty? %>
-        <span class="label label-primary"><%= current_user.assignments.started.size %></span>
+      <% unless obj.assignments.started.empty? %>
+        <span class="label label-primary"><%= obj.assignments.started.size %></span>
       <% end %>
     <% end %>
   </li>

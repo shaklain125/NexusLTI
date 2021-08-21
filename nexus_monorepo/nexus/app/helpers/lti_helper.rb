@@ -11,7 +11,8 @@ module LtiHelper
       :invalid_aid,
       :assigment_not_started,
       :invalid_lti_user,
-      :invalid_lti_role_teacher_access
+      :invalid_lti_role_teacher_access,
+      :course_not_found
     ]
     no_exit_err_msgs << :invalid_origin if @is_student
     # no_exit_err_msgs << :invalid_origin if @is_teacher
@@ -83,6 +84,7 @@ module LtiHelper
     @is_submission = LtiUtils.from_submission?(params) && !(controller_name.to_sym == :submission && action_name.to_sym == :new)
     @submission_path = new_submission_path(aid: LtiUtils.get_submission_token(params)[:aid]) if @is_submission
     @cid = LtiUtils.get_conf(params)[:cid]
+    @cid_course = LtiUtils::Session.get_course(params)
 
     LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(params, cookies, session) : [])
 
@@ -104,6 +106,7 @@ module LtiHelper
 
   def validate_token
     LtiUtils.invalid_token_raise(params)
+    LtiUtils::Session.raise_if_course_not_found(@cid_course)
     LtiUtils::LtiRole.if_student_show_student_pages_raise(params, controller_name, action_name)
     LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(params, controller_name, action_name)
     LtiUtils::Origin.raise_if_null_referrer_and_lti(request, params)

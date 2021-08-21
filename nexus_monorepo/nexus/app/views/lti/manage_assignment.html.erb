@@ -27,7 +27,7 @@
   </div>
   <div class="row">
     <div class="col-lg-10" style="margin-top:1.5rem; margin-bottom:1.5rem;">
-      <%= link_to(new_assignment_path(cid: @course.id)) do %>
+      <%= link_to(new_assignment_path(cid: @cid)) do %>
         <button type="button" name="button" class="btn btn-sm btn-primary"><%= icon 'plus-circle' %> Create Assignment</button>
       <% end %>
       <%= link_to(edit_assignment_path(id: @assignment.id)) do %>

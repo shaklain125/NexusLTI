@@ -114,9 +114,29 @@ module LtiUtils
         http_session_enabled? && !is_https
       end
 
-      def aid_valid?(aid, cid)
-        a = Assignment.where({ id: aid, course: cid })
-        a.any?
+      def my_aid?(aid, params)
+        return false unless aid
+        a = Assignment.find(aid.to_i)
+        return false unless a
+        my_cid?(a.course.id, params)
+      rescue StandardError
+        false
+      end
+
+      def my_cid?(cid, params)
+        return false unless cid
+        c = Course.find(cid.to_i)
+        return false unless c
+        get_user(params).my_courses.include?(c)
+      rescue StandardError
+        false
+      end
+
+      def my_dex_id?(dex_id, params)
+        return false unless dex_id
+        d = DeadlineExtension.find(dex_id.to_i)
+        return false unless d
+        my_aid?(d.assignment.id, params)
       rescue StandardError
         false
       end
@@ -142,6 +162,22 @@ module LtiUtils
         nil
       end
 
+      def get_user(params)
+        uid = LtiUtils.get_user_id(params)
+        return nil unless uid
+        User.find(uid)
+      rescue StandardError
+        nil
+      end
+
+      def get_course(params)
+        cid = LtiUtils.get_conf(params)[:cid]
+        return nil unless cid
+        Course.find(cid)
+      rescue StandardError
+        nil
+      end
+
       ## Raise
       def raise_if_invalid_session(cookies, session, request, params)
         id = session[:session_id]
@@ -159,6 +195,11 @@ module LtiUtils
         LtiUtils.delete_cookie_token_not_session(cookies) if !http_valid || https_valid
 
         raise LtiLaunch::Error, :invalid_lti_session if LtiUtils.contains_token_param(params) && !is_valid_session
+      end
+
+      ## Raise
+      def raise_if_course_not_found(course)
+        raise LtiLaunch::Error, :course_not_found unless course
       end
 
       def invalidate_devise_non_admin_login(params)

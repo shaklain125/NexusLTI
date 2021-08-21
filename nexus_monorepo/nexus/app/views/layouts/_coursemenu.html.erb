@@ -10,14 +10,19 @@
         <% end %>
       </li>
       <% current_user.my_courses.each do |c| %>
+        <% if @is_lti && c.id.to_s != @cid %>
+          <% next %>
+        <% end %>
         <li><%= link_to c.title, c %></li>
       <% end %>
-      <li role="separator" class="divider"></li>
-      <li>
-        <%= link_to(all_courses_path) do %>
-          <%= icon 'list' %> All Courses</a>
-      <% end %>
-    </li>
+      <% if (!@is_teacher || !@is_lti) %>
+        <li role="separator" class="divider"></li>
+        <li>
+          <%= link_to(all_courses_path) do %>
+            <%= icon 'list' %> All Courses</a>
+        <% end %>
+      </li>
+    <% end %>
     <% if current_user.admin? && (!@is_teacher || !@is_lti) %>
       <li role="separator" class="divider"></li>
       <li>

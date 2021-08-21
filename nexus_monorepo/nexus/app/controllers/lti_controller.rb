@@ -106,7 +106,6 @@ class LtiController < ApplicationController
 
   def configure
     raise LtiLaunch::Error, :invalid_teacher unless current_user
-    @course = Course.find(@cid)
   end
 
   def configure_generate
@@ -127,8 +126,6 @@ class LtiController < ApplicationController
       flash[:error] = "Assignment from LTI configuration does not exist"
       LtiUtils.update_and_set_token(params, cookies, session, LtiUtils.gen_data_update(params))
       redirect_to action: :configure
-      return
     end
-    @course = Course.find(@cid)
   end
 end

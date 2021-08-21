@@ -76,7 +76,7 @@
 <div class="well">
   <h2>LTI - Configuration Generator</h2>
   <hr>
-  <h5 class="course-title" style="margin-bottom:3rem"><%= icon 'book' %> <%= link_to @course.title, @course %></h5>
+  <h5 class="course-title" style="margin-bottom:3rem"><%= icon 'book' %> <%= link_to @cid_course.title, @cid_course %></h5>
   <div class ="form-horizontal">
     <div class="form-group">
       <div class="col-lg-12" style="margin-bottom:.25rem">
@@ -99,6 +99,9 @@
         <select class="form-control assignment_select">
           <option selected>Select an Assignment</option>
           <% current_user.assignments.each do |a| %>
+            <% if a.course.id.to_s != @cid %>
+              <% next %>
+            <% end %>
             <option value="<%= a.id %>"><%= "Course: #{a.course.title} #{'-'*5} #{a.title} #{'-'*5} #{a.started? ? 'Started' : 'Starts'}: #{distance_from_now_string a.start} #{'-'*5} Deadline: #{distance_from_now_string a.deadline}" %></option>
           <% end %>
         </select>

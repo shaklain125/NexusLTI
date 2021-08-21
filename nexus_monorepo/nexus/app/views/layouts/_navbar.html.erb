@@ -1,3 +1,5 @@
+<% not_lti_err_and_not_reg = !@is_lti_error && !@is_lti_reg && !@is_lti_reg_error %>
+<% lti_nexus_logo_path = 'javascript:void(0)' if @is_student || @is_lti_reg || @is_lti_reg_error || @is_lti_error  %>
 <nav class="navbar <%= current_user && current_user.admin? ? 'navbar-inverse' : '' %>">
   <div class="container-fluid">
     <!-- Brand and toggle get grouped for better mobile display -->
@@ -8,24 +10,21 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <% lti_nexus_logo_path = 'javascript:void(0)' if @is_student || @is_lti_error  %>
-      <% lti_nexus_logo_path = @is_lti_reg ? 'javascript:void(0)' : lti_nexus_logo_path %>
       <%= link_to "Nexus", lti_nexus_logo_path || root_path, class: "navbar-brand" %>
     </div>
-    <% if !@is_lti || @is_lti && !@is_lti_error || !@is_lti_reg_error || !@is_lti_reg  %>
-      <% except_cond = !@is_lti_error && !@is_lti_reg_error && !@is_lti_reg %>
+    <% if not_lti_err_and_not_reg %>
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
-          <% if (@is_teacher || !@is_lti) && except_cond %>
+          <% if (@is_teacher || !@is_lti) %>
             <%= render 'layouts/coursemenu' %>
             <%= render 'layouts/assignmentmenu' %>
           <% end %>
-          <% if (@is_student || !@is_lti) && except_cond %>
+          <% if (@is_student || @is_teacher || !@is_lti) %>
             <%= render 'layouts/submissionmenu' %>
           <% end %>
         </ul>
-        <% if (!@is_teacher || !@is_lti) && except_cond %>
+        <% if !@is_lti %>
           <ul class="nav navbar-nav navbar-right">
             <% if user_signed_in? && current_user.admin? %>
               <li>

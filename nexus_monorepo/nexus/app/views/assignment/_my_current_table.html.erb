@@ -1,4 +1,5 @@
-<% if current_user.assignments.started.empty? %>
+<% obj = @is_lti && @cid_course ? @cid_course : current_user %>
+<% if obj.assignments.started.empty? %>
   <p>You have no current assignments.</p>
 <% else %>
   <table class="table table-hover">
@@ -11,7 +12,7 @@
       </tr>
     </thead>
     <tbody>
-      <% current_user.assignments.started.each do |a| %>
+      <% obj.assignments.started.each do |a| %>
         <% if @is_lti && a.course.id.to_s != @cid %>
           <% next %>
         <% end %>
