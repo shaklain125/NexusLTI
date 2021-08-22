@@ -5,17 +5,14 @@ module LtiUtils
     end
 
     class << self
-      def _get_token(params)
-        LtiUtils.get_token(params)
+      def get_ctx(params)
+        return nil if LtiUtils.invalid_token(params)
+        role = LtiUtils.get_token(params)[:role]
+        ctx = role[:ctx].to_sym if role
+        ctx
       end
 
-      def _check_token(params)
-        LtiUtils.invalid_token(params)
-      end
-
-      def verify_student(params)
-        return false if _check_token(params)
-        json = _get_token(params)
+      def student?(params)
         [
           :learner,
           :learner_learner,
@@ -23,56 +20,20 @@ module LtiUtils
           :learner_guest_learner,
           :learner_external_learner,
           :learner_instructor
-        ].include?(json[:role][:ctx].to_sym)
+        ].include?(get_ctx(params))
       end
 
-      def verify_teacher(params)
-        return false if _check_token(params)
-        json = _get_token(params)
+      def teacher?(params)
         [
           :instructor,
           :instructor_primary_instructor,
           :instructor_lecturer,
           :instructor_guest_instructor,
           :instructor_external_instructor
-        ].include?(json[:role][:ctx].to_sym)
+        ].include?(get_ctx(params))
       end
 
-      def verify_admin(params)
-        return false if _check_token(params)
-        json = _get_token(params)
-        [
-          :administrator,
-          :administrator_administrator,
-          :administrator_support,
-          :administrator_developer,
-          :administrator_system_administrator,
-          :administrator_external_system_administrator,
-          :administrator_external_developer,
-          :administrator_external_support
-        ].include?(json[:role][:ctx].to_sym)
-      end
-
-      def verify_sys_admin(params)
-        return false if _check_token(params)
-        json = _get_token(params)
-        can_admin = json[:role][:sys]
-        unless can_admin.nil?
-          can_admin = [
-            :sys_admin,
-            :creator,
-            :account_admin,
-            :administrator
-          ].include?(can_admin.to_sym)
-        end
-        can_admin
-      end
-
-      def teacher_can_administrate(params)
-        verify_teacher(params) && verify_sys_admin(params)
-      end
-
-      def valid_student_pages(contr)
+      def valid_student_pages?(contr)
         params = contr.params
         controller_name = contr.controller_name.to_sym
         action_name = contr.action_name.to_sym
@@ -80,11 +41,11 @@ module LtiUtils
         valid_contr = [
           :submission
         ].include?(controller_name)
-        return params[:aid] == aid if valid_contr && action_name == :new && !_check_token(params)
+        return params[:aid] == aid if valid_contr && action_name == :new
         valid_contr
       end
 
-      def valid_teacher_pages(contr)
+      def valid_teacher_pages?(contr)
         params = contr.params
         controller_name = contr.controller_name.to_sym
         action_name = contr.action_name.to_sym
@@ -135,17 +96,17 @@ module LtiUtils
         valid
       end
 
-      ## Raise
+      ## Raise 2
+
       def if_student_show_student_pages_raise(contr)
-        raise LtiLaunch::Error, :invalid_lti_role_access if verify_student(contr.params) && !valid_student_pages(contr)
+        raise LtiLaunch::Error, :invalid_lti_role_access if student?(contr.params) && !valid_student_pages?(contr)
       end
 
-      ## Raise
       def if_teacher_show_teacher_pages_raise(contr)
-        raise LtiLaunch::Error, :invalid_lti_role_teacher_access if verify_teacher(contr.params) && !valid_teacher_pages(contr)
+        raise LtiLaunch::Error, :invalid_lti_role_teacher_access if teacher?(contr.params) && !valid_teacher_pages?(contr)
       end
 
-      private :_check_token, :_get_token
+      private :get_ctx
     end
 
     def as_json
@@ -153,7 +114,7 @@ module LtiUtils
 
       sys_roles = Roles.system_roles_json
 
-      custom = LtiUtils.no_prefix_custom(@params)
+      custom = LtiUtils::LaunchHelper.no_prefix_custom(@params)
 
       role = custom[:membership_role].split(',')
 

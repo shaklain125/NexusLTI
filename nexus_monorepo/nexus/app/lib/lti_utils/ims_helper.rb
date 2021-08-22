@@ -65,18 +65,18 @@ module LtiUtils
         all::MessageAuthenticator.new(launch_url, post_params, shared_secret)
       end
 
-      def new_tp_reg_service(registration_request)
+      def tp_reg_service(registration_request)
         all::ToolProxyRegistrationService.new(registration_request)
       end
 
-      def get_tc_profile_from_tp_reg_service(registration_request)
-        new_tp_reg_service(registration_request).tool_consumer_profile
+      def get_tc_profile!(registration_request)
+        tp_reg_service(registration_request).tool_consumer_profile
       rescue StandardError
         raise LtiRegistration::Error, :failed_to_retrieve_tool_consumer_profile
       end
 
       def register_tool_proxy(registration_request, tool_proxy)
-        new_tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
+        tp_reg_service(registration_request).register_tool_proxy(tool_proxy)
       end
 
       def tc_profile_exists?(tc_profile_url)
@@ -84,6 +84,8 @@ module LtiUtils
       rescue StandardError
         false
       end
+
+      private :tp_reg_service
     end
   end
 

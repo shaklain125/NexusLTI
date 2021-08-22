@@ -87,7 +87,11 @@ module LtiUtils
         return nil unless user
         session_exists = LtiSession.where({ user: user.id })
         session_exists.delete_all if session_exists.any?
-        LtiSession.create(lti_tool: LtiTool.find(LtiUtils.get_tool_id(params)), user: user)
+        tool = LtiTool.find(LtiUtils.get_tool_id(params))
+        return nil unless tool
+        lti_session = LtiSession.new(lti_tool: tool, user: user)
+        lti_session.save!
+        lti_session
       end
 
       def get_current_user(params)
@@ -110,7 +114,7 @@ module LtiUtils
         # Session flashes works in renders but not redirect_to
         session_nil = contr.session[:session_id].nil?
         is_http_session = http_session?(contr.request) && session_nil
-        lti_http_flash = !LtiUtils.invalid_token(contr.params) && is_http_session && !contr.flash.empty?
+        lti_http_flash = LtiUtils.tokens_exists_and_valid?(contr.params) && is_http_session && !contr.flash.empty?
         LtiUtils.flash(contr) if lti_http_flash
       end
 
@@ -202,7 +206,8 @@ module LtiUtils
         nil
       end
 
-      ## Raise
+      ## Raise 2
+
       def raise_if_invalid_session(contr)
         request = contr.request
         cookies = request.cookies
@@ -225,19 +230,8 @@ module LtiUtils
         raise LtiLaunch::Error, :invalid_lti_session if LtiUtils.contains_token_param(params) && !is_valid_session
       end
 
-      ## Raise
       def raise_if_course_not_found(course)
         raise LtiLaunch::Error, :course_not_found unless course
-      end
-
-      def invalidate_devise_non_admin_login(params)
-        return nil unless LTI_DISABLE_DEVISE_NON_ADMIN_LOGIN
-        if params[:user] && params[:user][:email]
-          u = User.find_by_email(params[:user][:email])
-          is_admin = u && u.admin?
-          return u unless is_admin
-        end
-        nil
       end
     end
   end

@@ -2,9 +2,9 @@ Rails.application.routes.draw do
   ### Devise
   devise_for :users, skip: [:sessions, :registrations], controllers: { omniauth_callbacks: 'callbacks' }
   devise_scope :user do
-    get 'users/login' => 'sessions#new', as: :new_user_session
-    get 'users/logout' => 'sessions#destroy', as: :destroy_user_session
-    post 'users/login' => 'sessions#create', as: :user_session
+    get 'users/login' => 'devise/sessions#new', as: :new_user_session
+    get 'users/logout' => 'devise/sessions#destroy', as: :destroy_user_session
+    post 'users/login' => 'devise/sessions#create', as: :user_session
   end
 
   ### Users
@@ -100,12 +100,7 @@ Rails.application.routes.draw do
 
   ### LTI
   scope(controller: :lti) do
-    LTI_RESOURCE_HANDLERS.each do |rh|
-      route = rh[:message][:route].symbolize_keys
-      path = route.delete(:path) || ':controller/:action'
-      post "lti/message/#{path}", route
-    end
-
+    LtiUtils::RHHelper.init_lti_paths!(self)
     get 'lti/configure', action: :configure, as: :lti_configure
     post 'lti/configure/generate', action: :configure_generate, as: :lti_configure_generate
     get 'lti/manage_assignment', action: :manage_assignment, as: :lti_manage_assignment

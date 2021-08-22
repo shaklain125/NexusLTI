@@ -29,7 +29,7 @@ module LtiUtils
       end
 
       def check_tc_profile_valid(params)
-        LtiUtils.services.get_tc_profile_from_tp_reg_service(LtiUtils.models.generate_message(params))
+        LtiUtils.services.get_tc_profile!(LtiUtils.models.generate_message(params))
         true
       rescue StandardError
         false
@@ -37,18 +37,18 @@ module LtiUtils
 
       ## Create REG
 
-      def create_reg_obj(params, controller)
-        registration_request = LtiUtils.models.generate_message(params)
+      def create_reg_obj(contr, params)
+        reg_request = LtiUtils.models.generate_message(params)
         LtiRegistration.new(
-          registration_request_params: registration_request.post_params,
-          tool_proxy_json: LtiUtils::ToolProxyReg.new(registration_request, controller).tool_proxy.as_json
+          registration_request_params: reg_request.post_params,
+          tool_proxy_json: LtiUtils::ToolProxyReg.new(contr, reg_request).tool_proxy.as_json
         )
       rescue StandardError => e
         raise LtiRegistration::Error, e
       end
 
-      def create_and_save_reg_obj(params, controller)
-        reg = create_reg_obj(params, controller)
+      def create_and_save_reg_obj(contr, params)
+        reg = create_reg_obj(contr, params)
         begin
           reg.save!
           reg
@@ -118,8 +118,8 @@ module LtiUtils
         reg.update(tool_proxy_json: tool_proxy.to_json)
       end
 
-      def register_tool_proxy(reg, controller)
-        LtiUtils::ToolProxyReg.register(reg, controller)
+      def register_tool_proxy(contr, reg)
+        LtiUtils::ToolProxyReg.register(contr, reg)
         reg.destroy
         { success: true }.symbolize_keys
       rescue LtiUtils.errors.all::ToolProxyRegistrationError => e

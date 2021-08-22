@@ -24,11 +24,9 @@ module LtiHelper
     return if controller_name.to_sym == :lti_registration
 
     @is_lti_error = false
-    @referrer = request.referrer
-    @session_id = session[:session_id]
 
-    @is_lti_launch = LtiLaunch.check_launch?(LtiUtils.models.parsed_lti_message(request))
-    @is_lms_origin = LtiUtils::Origin.check_if_is_lms_origin(request)
+    @is_lti_launch = LtiLaunch.launch_valid?(LtiUtils.models.parsed_lti_message(request))
+    @is_lms_origin = LtiUtils::Origin.lms_origin?(request)
     @is_lms_or_launch = @is_lti_launch || @is_lms_origin
 
     if @is_lms_or_launch
@@ -37,10 +35,11 @@ module LtiHelper
       params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
     end
 
-    @is_teacher = LtiUtils::LtiRole.verify_teacher(params)
-    @is_student = LtiUtils::LtiRole.verify_student(params)
+    @is_teacher = LtiUtils::LtiRole.teacher?(params)
+    @is_student = LtiUtils::LtiRole.student?(params)
 
-    params.delete(:lti_token) if !@is_lms_or_launch && !@is_teacher && !@is_student
+    is_invalid_lti_role = !@is_teacher && !@is_student && !LtiUtils.invalid_token(params)
+    params.delete(:lti_token) if !@is_lms_or_launch && is_invalid_lti_role
 
     @is_lti = LtiUtils.contains_token_param(params)
 
@@ -57,7 +56,7 @@ module LtiHelper
     @manage_only_current_aid = LtiUtils::Session.manage_only_current_aid?
     @allow_course_delete = LtiUtils::Session.allow_course_delete?
 
-    LtiUtils.set_flashes(flash, @is_lti ? LtiUtils.get_flashes!(self) : [])
+    LtiUtils.set_flashes(flash, LtiUtils.get_flashes!(self)) if LtiUtils.tokens_exists_and_valid?(params)
 
     validate_token unless @is_lms_or_launch
     block_controllers unless @is_lms_or_launch
@@ -69,8 +68,8 @@ module LtiHelper
     valid_methods = %w[POST PATCH].include?(request.method)
     token = {}
     token[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
-    is_student = LtiUtils::LtiRole.verify_student(token)
-    is_teacher = LtiUtils::LtiRole.verify_teacher(token)
+    is_student = LtiUtils::LtiRole.student?(token)
+    is_teacher = LtiUtils::LtiRole.teacher?(token)
     is_valid_lti_role = is_student || is_teacher
     is_valid_lti_role && valid_methods && is_same_origin
   end

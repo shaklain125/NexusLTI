@@ -12,7 +12,7 @@ class LtiRegistration < ActiveRecord::Base
   end
 
   def tool_consumer_profile
-    @tool_consumer_profile ||= LtiUtils.services.get_tc_profile_from_tp_reg_service(registration_request)
+    @tool_consumer_profile ||= LtiUtils.services.get_tc_profile!(registration_request)
   end
 
   def self.clean_up!

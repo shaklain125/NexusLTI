@@ -10,19 +10,15 @@ module LtiRegHelper
     !session[:session_id].nil?
   end
 
-  def lti_reg_req?
-    !invalid_req?
-  end
-
   def invalid_req?
-    is_lms = LtiUtils::Origin.check_if_is_lms_origin(request)
+    is_lms = LtiUtils::Origin.lms_origin?(request)
     is_valid_reg = LtiUtils::RegHelper.check_tc_profile_valid(params) # valid only when is lms
     is_same_origin = LtiUtils::Origin.same_origin?(request)
     (is_same_origin && is_valid_reg) || ((!is_same_origin || is_lms) && !is_valid_reg)
   end
 
   def register_proxy(reg)
-    reg_result = LtiUtils::RegHelper.register_tool_proxy(reg, self)
+    reg_result = LtiUtils::RegHelper.register_tool_proxy(self, reg)
     if reg_result[:success]
       render 'lti_registration/success_msg', status: 200
     else

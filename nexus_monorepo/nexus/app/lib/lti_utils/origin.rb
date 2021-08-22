@@ -5,7 +5,7 @@ module LtiUtils
         LTI_VALID_LMS_ORIGIN_HOSTS
       end
 
-      def check_if_is_lms_origin(request)
+      def lms_origin?(request)
         referrer = request.referrer
         origin = request.headers['origin']
         return false if !referrer || !origin

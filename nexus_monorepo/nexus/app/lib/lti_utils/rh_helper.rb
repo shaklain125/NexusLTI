@@ -1,6 +1,37 @@
 module LtiUtils
   class RHHelper
     class << self
+      ## Resource Handlers and LTI paths
+
+      def resource_handlers
+        LTI_RESOURCE_HANDLERS
+      end
+
+      def resource_handlers!
+        handlers = []
+        Dir[Rails.root.join('config', 'lti', 'resource_handlers', '*.json')].each do |rh|
+          rh = File.read(rh)
+          begin
+            rh = JSON.parse(rh).with_indifferent_access
+            rh.delete('$schema') if rh['$schema']
+            handlers << rh
+          rescue StandardError
+            next
+          end
+        end
+        handlers
+      end
+
+      def init_lti_paths!(router)
+        resource_handlers.each do |rh|
+          route = rh[:message][:route].symbolize_keys
+          path = route.delete(:path) || ':controller/:action'
+          router.post("lti/message/#{path}", route)
+        end
+      end
+
+      ## SCHEMA AND ALL CAPS
+
       def schema
         rh_schema = Rails.root.join('config', 'lti', 'schema', 'resource_handler.json')
         return {} unless File.exist?(rh_schema)
@@ -13,8 +44,7 @@ module LtiUtils
       end
 
       def all_caps
-        return LTI_RH_ALL_CAPS unless LTI_RH_ALL_CAPS.empty?
-        all_caps!
+        LTI_RH_ALL_CAPS
       end
 
       def all_caps!
@@ -22,10 +52,16 @@ module LtiUtils
         HashHelper.nested_hash_val(all_caps, 'enum')
       end
 
+      ## General
+
+      def recognise_path(path)
+        Rails.application.routes.recognize_path(path, method: 'POST')
+      end
+
       def find_local_rh_by_path(path)
-        route = Rails.application.routes.recognize_path(path, method: 'POST')
+        route = recognise_path(path)
         return {} unless route
-        found_rh = LTI_RESOURCE_HANDLERS.select do |rh|
+        found_rh = resource_handlers.select do |rh|
           l_route = rh[:message][:route]
           contr = l_route[:controller] == route[:controller]
           act = l_route[:action] == route[:action]
@@ -86,18 +122,18 @@ module LtiUtils
         reg.tool_proxy.tool_profile.resource_handler
       end
 
-      def get_rh_name_path_list(reg, controller)
+      def get_rh_name_path_list(contr, reg)
         list = get_rh_from_reg(reg).each_with_object([]) do |rh, l|
           rh.message.each do |mh|
             pth = mh.path
-            route = Rails.application.routes.recognize_path(pth, method: 'POST')
+            route = recognise_path(pth)
             l << {
               name: rh.resource_name.default_value,
               path: pth,
               route: route,
               full_path: Rails.application.routes.url_for(
                 **route,
-                host: controller.request.host_with_port
+                host: contr.request.host_with_port
               )
             }
           end
@@ -115,6 +151,8 @@ module LtiUtils
         end
         [caps.to_a, all_caps]
       end
+
+      private :recognise_path
     end
   end
 end

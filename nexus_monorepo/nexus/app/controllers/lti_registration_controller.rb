@@ -7,19 +7,19 @@ class LtiRegistrationController < ApplicationController
 
   def register
     if LtiUtils::Session.https_session?(request) && session_exists?
-      session[:lti_reg_token] = LtiUtils.encrypt_json({ reg_params: params })
-      @registration = LtiUtils::RegHelper.create_reg_obj(params, self)
+      session[:lti_reg_token] = LtiUtils.encrypt_json_token({ reg_params: params })
+      @registration = LtiUtils::RegHelper.create_reg_obj(self, params)
     else
-      @registration = LtiUtils::RegHelper.create_and_save_reg_obj(params, self)
+      @registration = LtiUtils::RegHelper.create_and_save_reg_obj(self, params)
     end
     caps = LtiUtils::RegHelper.get_services_and_params(@registration)
     @capabilities = caps[:capabilities]
     @services_offered = caps[:services]
-    @rh_list = LtiUtils::RHHelper.get_rh_name_path_list(@registration, self)
+    @rh_list = LtiUtils::RHHelper.get_rh_name_path_list(self, @registration)
   end
 
   def auto_register
-    reg = LtiUtils::RegHelper.create_reg_obj(params, self)
+    reg = LtiUtils::RegHelper.create_reg_obj(self, params)
     LtiUtils::RegHelper.get_and_save_reg_caps(reg)
     register_proxy(reg)
   end
@@ -28,9 +28,9 @@ class LtiRegistrationController < ApplicationController
     reg_token = session[:lti_reg_token]
 
     if reg_token
-      reg_params = LtiUtils.decrypt_json(reg_token)[:reg_params]
+      reg_params = LtiUtils.decrypt_json_token(reg_token)[:reg_params]
       reg_params = LtiUtils::HashHelper.stringify(reg_params)
-      @registration = LtiUtils::RegHelper.create_and_save_reg_obj(reg_params, self)
+      @registration = LtiUtils::RegHelper.create_and_save_reg_obj(self, reg_params)
     end
 
     @registration = if reg_token

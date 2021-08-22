@@ -6,7 +6,7 @@ module LtiUtils
 
     def get_token(params)
       _token = _get_token_param(params)
-      token = decrypt_json(_token)
+      token = decrypt_json_token(_token)
       return {} if token.empty?
       token
     end
@@ -41,7 +41,7 @@ module LtiUtils
 
     def update_and_set_token(contr, json)
       params = contr.params
-      params[:lti_token] = encrypt_json(update_merge_token(params, json))
+      params[:lti_token] = encrypt_json_token(update_merge_token(params, json))
       set_cookie_token(contr.request.cookies, contr.session, params[:lti_token])
     end
 
@@ -105,6 +105,25 @@ module LtiUtils
       from && !from_path
     end
 
+    def gen_data_update(params)
+      { generator: { cid: get_config(params)[:cid] }, config: nil }
+    end
+
+    def get_conf(params, *attrs)
+      d = {}
+      if from_generator?(params)
+        d = get_gen(params)
+      elsif from_manage_assignment?(params)
+        d = get_config(params)
+      elsif from_submission?(params)
+        d = get_submission_token(params)
+      end
+      return d.values_at(*attrs) unless attrs.empty?
+      d
+    end
+
+    ## Flash
+
     def get_flashes(params)
       get_token(params)[:flash] || []
     end
@@ -121,23 +140,6 @@ module LtiUtils
 
     def set_flashes(flash, flash_lti)
       flash_lti.each { |t, m| flash[t] = m }
-    end
-
-    def gen_data_update(params)
-      { generator: { cid: get_config(params)[:cid] }, config: nil }
-    end
-
-    def get_conf(params, *attrs)
-      d = {}
-      if from_generator?(params)
-        d = get_gen(params)
-      elsif from_manage_assignment?(params)
-        d = get_config(params)
-      elsif from_submission?(params)
-        d = get_submission_token(params)
-      end
-      return d.values_at(*attrs) unless attrs.empty?
-      d
     end
 
     private :_get_token_param

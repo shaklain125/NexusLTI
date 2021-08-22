@@ -19,15 +19,16 @@ class LtiController < ApplicationController
   end
 
   def launch
-    @message = (@lti_launch && @lti_launch.message) || LtiUtils.models.generate_message(request.request_parameters)
-    @launch_id = @lti_launch.id
+    @message = @lti_launch && @lti_launch.message
+    raise LtiLaunch::Error, :invalid_lti_launch_message unless @message
+
     @tool_id = @lti_launch.lti_tool_id
 
     custom_params = @message.custom_params
-    custom = LtiUtils.no_prefix_custom(custom_params)
-    custom_params_exists = LtiUtils.keys_in_custom?(
+    custom = LtiUtils::LaunchHelper.no_prefix_custom(custom_params)
+    custom_params_exists = LtiUtils::LaunchHelper.keys_in_custom?(
       custom,
-      LtiUtils.required_custom_params(request)
+      LtiUtils::LaunchHelper.required_custom_params(request)
     )
     raise LtiLaunch::Error, :missing_arguments unless custom_params_exists
 
@@ -51,18 +52,18 @@ class LtiController < ApplicationController
       ip_addr: request.remote_ip
     }
 
-    params[:lti_token] = LtiUtils.encrypt_json(token_data)
+    params[:lti_token] = LtiUtils.encrypt_json_token(token_data)
 
-    is_student = LtiUtils::LtiRole.verify_student(params)
-    is_teacher = LtiUtils::LtiRole.verify_teacher(params)
+    is_student = LtiUtils::LtiRole.student?(params)
+    is_teacher = LtiUtils::LtiRole.teacher?(params)
 
     user = LtiUtils::Session.create_student(person[:email], person[:name]) if is_student
     user = LtiUtils::Session.create_teacher(person[:email], person[:name]) if is_teacher
 
-    LtiUtils::Session.create_session(user, params)  if is_student || is_teacher
+    lti_session = LtiUtils::Session.create_session(user, params)  if is_student || is_teacher
+    raise LtiLaunch::Error, :failed_to_create_lti_session unless lti_session
 
     course = LtiUtils::Session.create_course(user, is_teacher, **course_params)
-
     raise LtiLaunch::Error, :course_has_not_started unless course
 
     aid = config[:aid]
@@ -111,9 +112,9 @@ class LtiController < ApplicationController
     u = current_user
     is_invalid = u.nil? || aid_a.nil? || !aid_valid || !u
     gen = LtiUtils.encrypt_json({ aid: aid, created_at: DateTime.now.strftime('%s').to_i * 1000 })
-    render json: { config: is_invalid ? conf.to_json : gen }
+    render json: { config: is_invalid ? 'Error' : gen }
   rescue StandardError
-    render json: { config: 'Error' }
+    render json: { config: 'Unknown error' }
   end
 
   def manage_assignment

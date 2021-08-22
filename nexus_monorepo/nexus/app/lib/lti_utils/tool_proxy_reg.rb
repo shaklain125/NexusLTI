@@ -1,8 +1,8 @@
 module LtiUtils
   class ToolProxyReg
-    def initialize(reg_request, controller)
+    def initialize(controller, reg_request)
       @controller = controller
-      @tool_consumer_profile = LtiUtils.services.get_tc_profile_from_tp_reg_service(reg_request)
+      @tool_consumer_profile = LtiUtils.services.get_tc_profile!(reg_request)
     end
 
     def includes_split_secret?
@@ -50,7 +50,7 @@ module LtiUtils
     end
 
     def resource_handlers
-      @resource_handlers ||= LTI_RESOURCE_HANDLERS.map do |rh|
+      @resource_handlers ||= LtiUtils::RHHelper.resource_handlers.map do |rh|
         LtiUtils.models.all::ResourceHandler.from_json(
           {
             resource_type: { code: 'default' },
@@ -68,14 +68,14 @@ module LtiUtils
       [LtiUtils.models.all::BaseUrlChoice.new(default_base_url: @controller.request.base_url)]
     end
 
-    def self.register(reg_obj, controller)
+    def self.register(contr, reg_obj)
       tool_proxy = reg_obj.tool_proxy
       reg_req = reg_obj.registration_request
 
       registered_proxy = LtiUtils.services.register_tool_proxy(reg_req, tool_proxy)
       tool_proxy_guid = registered_proxy.tool_proxy_guid
 
-      tool_proxy.id = controller.lti_show_tool_url(tool_proxy_guid)
+      tool_proxy.id = contr.lti_show_tool_url(tool_proxy_guid)
       tool_proxy.tool_proxy_guid = tool_proxy_guid
 
       tp_sc = tool_proxy.security_contract

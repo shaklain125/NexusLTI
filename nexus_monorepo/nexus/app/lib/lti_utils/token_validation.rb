@@ -7,9 +7,13 @@ module LtiUtils
     def invalid_token(params)
       # check if token is invalid
       _token = _get_token_param(params)
-      token = decrypt_json(_token)
+      token = decrypt_json_token(_token)
       return true if token.empty?
       false
+    end
+
+    def tokens_exists_and_valid?(params)
+      contains_token_param(params) && !invalid_token(params)
     end
 
     def cookie_token_exists(cookies, session)
