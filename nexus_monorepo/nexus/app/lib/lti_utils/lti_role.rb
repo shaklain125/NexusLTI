@@ -90,15 +90,19 @@ module LtiUtils
           invalid = invalid_actions.include?(action_name)
           valid = !invalid
           valid = Session.my_cid?(params[:id], params) if params[:id] && action_name != :mine && valid
+          valid = params[:id] == cid && allow_course_delete if params[:id] && action_name == :destroy && valid
         when :assignment
-          if params[:cid] && action_name == :new
+          c_id = params[:cid]
+          c_id = params[:assignment][:course_id] if params[:assignment] && !c_id
+          if c_id && [:new, :create].include?(action_name)
             valid = if manage_only_current_aid && !manage_only_current_cid
-                      params[:cid].to_s == cid
+                      c_id.to_s == cid
                     else
-                      Session.my_cid?(params[:cid], params)
+                      Session.my_cid?(c_id, params)
                     end
           end
           valid = Session.my_aid?(params[:id], params) if params[:id] && action_name != :mine
+          valid = LtiUtils::Session.aid_allow_first_teacher_only(contr) if valid
         when :deadline_extension
           valid = Session.my_aid?(params[:aid], params) if params[:aid] && action_name == :new
           valid = Session.my_dex_id?(params[:id], params) if params[:id] && action_name != :create

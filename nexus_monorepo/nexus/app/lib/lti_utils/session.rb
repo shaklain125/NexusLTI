@@ -136,8 +136,36 @@ module LtiUtils
         LTI_TEACHER_MANAGE_ONLY_CURRENT_ASSIGNMENT
       end
 
-      def allow_course_delete?
-        LTI_TEACHER_ALLOW_COURSE_DELETE
+      def allow_course_delete?(contr)
+        return false unless LTI_TEACHER_ALLOW_COURSE_DELETE
+        return first_teacher?(contr) if LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
+        true
+      end
+
+      def first_teacher?(contr)
+        u = get_user(contr.params)
+        if u
+          c = contr.instance_variable_get('@cid_course')
+          if c
+            t = c.teachers.first
+            return t.id == u.id
+          end
+        end
+        false
+      end
+
+      def aid_allow_first_teacher_only(contr)
+        is_first_teacher = first_teacher?(contr)
+        valid = true
+        case contr.action_name.to_sym
+        when :new, :create
+          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_CREATE_ASSIGNMENT
+        when :edit, :update
+          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_EDIT_ASSIGNMENT
+        when :destroy
+          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
+        end
+        valid
       end
 
       def my_aid?(aid, params)

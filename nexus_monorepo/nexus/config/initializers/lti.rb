@@ -16,6 +16,22 @@ LTI_VALID_LMS_ORIGIN_HOSTS = [
 ].freeze
 
 # Teacher LTI Permissions
+# - The constants that state the first teacher refers to the teacher that creates a course.
+#   Other teachers in the same course will be affected if permission is given to only the first teacher.
+# - Managing only the current course suggests that the teacher will not be able to manage their other courses in the same session.
+#   The teacher would need to navigate to the other courses separately in the LMS to be able to manage them in LTI.
+# - Managing only the current assignment means that the teacher will only be able to do CRUD operations on a single assignment.
+#   They will not be able to manage other assignments in the same session.
+
+## Course deletion
 LTI_TEACHER_ALLOW_COURSE_DELETE = true
+LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE = true
+
+## Management
 LTI_TEACHER_MANAGE_ONLY_CURRENT_COURSE = false
 LTI_TEACHER_MANAGE_ONLY_CURRENT_ASSIGNMENT = false
+
+## Assignment CRUD operations
+LTI_ALLOW_ONLY_FIRST_TEACHER_CREATE_ASSIGNMENT = false
+LTI_ALLOW_ONLY_FIRST_TEACHER_EDIT_ASSIGNMENT = false
+LTI_ALLOW_ONLY_FIRST_TEACHER_DELETE_ASSIGNMENT = false

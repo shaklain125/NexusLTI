@@ -54,7 +54,7 @@ module LtiHelper
 
     @manage_only_current_cid = LtiUtils::Session.manage_only_current_cid?
     @manage_only_current_aid = LtiUtils::Session.manage_only_current_aid?
-    @allow_course_delete = LtiUtils::Session.allow_course_delete?
+    @allow_course_delete = LtiUtils::Session.allow_course_delete?(self)
 
     LtiUtils.set_flashes(flash, LtiUtils.get_flashes!(self)) if LtiUtils.tokens_exists_and_valid?(params)
 
