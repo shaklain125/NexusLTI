@@ -27,12 +27,8 @@
             <% end %>
           </th>
           <td>
-            <% if @is_student %>
+            <%= link_to s.assignment do %>
               <%= s.assignment.title %>
-            <% else %>
-              <%= link_to s.assignment do %>
-                <%= s.assignment.title %>
-              <% end %>
             <% end %>
           </td>
           <td>

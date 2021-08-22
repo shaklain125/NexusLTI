@@ -38,11 +38,23 @@ module LtiUtils
         controller_name = contr.controller_name.to_sym
         action_name = contr.action_name.to_sym
         aid = contr.instance_variable_get('@aid')
-        valid_contr = [
-          :submission
-        ].include?(controller_name)
-        return params[:aid] == aid if valid_contr && action_name == :new
-        valid_contr
+        valid = true
+
+        case controller_name
+        when :submission
+          valid = params[:aid] == aid if params[:aid] && action_name == :new
+        when :assignment
+          valid_actions = [:show].include?(action_name)
+          valid = valid_actions && params[:id] == aid if params[:id]
+          if valid
+            d = DeadlineExtension.where({ assignment: aid, user: LtiUtils::Session.get_user(params) })
+            contr.instance_variable_set('@student_dex', d.first) if d.any?
+          end
+        else
+          valid = false
+        end
+
+        valid
       end
 
       def valid_teacher_pages?(contr)

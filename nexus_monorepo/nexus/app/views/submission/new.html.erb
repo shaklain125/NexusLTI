@@ -1,7 +1,9 @@
 <div class="well">
+  <% if @is_student || !@is_lti %>
+    <h5 class="course-title" style="margin-bottom:3rem"><%= icon 'tasks' %><span style="margin-left:1rem;"><%= link_to @submission.assignment.title, @submission.assignment %></span></h5>
+  <% end %>
   <h2>Upload Submission for <%= @submission.assignment.title %></h2>
   <hr />
-
   <p>By submitting code through any of the submission methods below, you are
     making a submission to the college, and declare that this submission is your
     own work. Submissions are subject to plagiarism checks and any suspected
@@ -9,7 +11,6 @@
     university's misconduct procedure. Upheld charges can result in a range of
     penalties from an award of zero marks for the work, to expulsion from the
     college.</p>
-
   <h4>Select a submission method:</h4>
   <!-- Nav tabs -->
   <% had_active_tab = false %>
@@ -29,7 +30,6 @@
       <li role="presentation" <% unless (had_active_tab) %>class="active"<% had_active_tab = true end %>><a href="#ide" aria-controls="ide" role="tab" data-toggle="tab"><%= icon 'code' %> Web IDE</a></li>
     <% end %>
   </ul>
-
   <!-- Tab panes -->
   <% had_active_tab = false %>
   <div class="tab-content">
