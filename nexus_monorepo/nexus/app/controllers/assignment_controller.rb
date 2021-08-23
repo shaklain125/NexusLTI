@@ -3,7 +3,7 @@ class AssignmentController < ApplicationController
   require_relative '../lib/git_utils'
   require_relative '../lib/workflow_utils'
 
-  before_action :authenticate_user_or_lti!
+  before_action :authenticate_user!
   before_action :authenticate_admin!, except: [:mine, :show, :show_deadline_extensions, :quick_config_confirm, :configure_tools, :new, :create, :edit, :update, :destroy, :export_submissions_data, :list_submissions, :list_ordered_submissions, :prepare_submission_repush, :submission_repush]
 
   def mine; end

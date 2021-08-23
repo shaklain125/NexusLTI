@@ -4,7 +4,7 @@ class SubmissionController < ApplicationController
   require_relative '../lib/submission_utils'
   require_relative '../lib/git_utils'
 
-  before_action :authenticate_user_or_lti!
+  before_action :authenticate_user!
 
   def show
     @submission = Submission.find(params[:id])

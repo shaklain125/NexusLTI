@@ -1,6 +1,6 @@
 class UserController < ApplicationController
   include ApplicationHelper
-  before_action :authenticate_user_or_lti!
+  before_action :authenticate_user!
   before_action :authenticate_admin!, except: [:enrol, :unenrol]
 
   def enrol

@@ -20,13 +20,13 @@ module LtiUtils
     end
   end
 
-  LTI = IMS::LTI
-  LIS = IMS::LIS
+  LTI_LIB = IMS::LTI
+  LIS_LIB = IMS::LIS
 
   class Errors
     class << self
       def all
-        LTI::Errors
+        LTI_LIB::Errors
       end
     end
   end
@@ -34,7 +34,7 @@ module LtiUtils
   class Roles
     class << self
       def roles_json
-        roles = LIS::Roles::Context::Handles
+        roles = LIS_LIB::Roles::Context::Handles
         constants = roles.constants.map { |c| [c, roles.const_get(c)]  }
         HashHelper.snake_case_symbolize(constants)
       end
@@ -58,7 +58,7 @@ module LtiUtils
   class Services
     class << self
       def all
-        LTI::Services
+        LTI_LIB::Services
       end
 
       def authenticate_message(launch_url, post_params, shared_secret)
@@ -92,7 +92,7 @@ module LtiUtils
   class Models
     class << self
       def all
-        LTI::Models
+        LTI_LIB::Models
       end
 
       def generate_message(request_parameters)
@@ -111,5 +111,5 @@ module LtiUtils
     end
   end
 
-  private_constant :LTI, :LIS, :Services, :Models, :Errors
+  private_constant :LTI_LIB, :LIS_LIB, :Services, :Models, :Errors
 end

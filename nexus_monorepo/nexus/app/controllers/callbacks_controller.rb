@@ -13,7 +13,7 @@ class CallbacksController < Devise::OmniauthCallbacksController
   def github_com
     omniauth_data = request.env['omniauth.auth']
 
-    authenticate_user_or_lti!
+    authenticate_user!
 
     current_user.associate_github_com_data(omniauth_data)
 

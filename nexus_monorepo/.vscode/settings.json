@@ -36,6 +36,9 @@
     "nexus/**/*.lock": true,
     "nexus/**/migrate": false,
     "nexus/**/*.sql*": true,
+    "nexus/**/spec": true,
+    "nexus/**/app/assets": true,
+    "nexus/**/app/jobs": true,
 
     "nexus/circle*": true,
     "nexus/lib": false,
