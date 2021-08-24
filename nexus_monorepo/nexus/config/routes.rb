@@ -100,7 +100,7 @@ Rails.application.routes.draw do
 
   ### LTI
   scope(controller: :lti) do
-    LtiUtils::RHHelper.init_lti_paths!(self)
+    LtiUtils::Init.lti_paths!(self)
     get 'lti/configure', action: :configure, as: :lti_configure
     post 'lti/configure/generate', action: :configure_generate, as: :lti_configure_generate
     get 'lti/manage_assignment', action: :manage_assignment, as: :lti_manage_assignment
