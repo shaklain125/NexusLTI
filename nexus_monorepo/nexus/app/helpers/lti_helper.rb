@@ -97,7 +97,7 @@ module LtiHelper
   end
 
   def exit_lti
-    LtiUtils::Session.logout_session(self) unless LtiUtils::Token.invalid?(params)
+    LtiUtils::Session.logout(self) unless LtiUtils::Token.invalid?(params)
     sign_out(current_user)
     LtiUtils::Token.delete_cookie_token(cookies, session)
   end

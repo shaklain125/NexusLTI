@@ -44,6 +44,7 @@ module LtiUtils
           u = User.new
           u.email = email
           u.admin = admin
+          u.uid = SecureRandom.uuid
         end
         update_user_details(u, name)
       end
@@ -119,7 +120,7 @@ module LtiUtils
 
       ## Logout session. Used for lti exit
 
-      def logout_session(contr)
+      def logout(contr)
         params = contr.params
         lti_session = LtiSession.find_by_lti_tool_id(LtiUtils::Token.get_tool_id(params))
         lti_session.delete if lti_session
