@@ -6,7 +6,7 @@ module LtiUtils
 
     class << self
       def get_ctx(params)
-        return nil if LtiUtils.invalid_token(params)
+        return nil if LtiUtils.invalid_token?(params)
         role = LtiUtils.get_token(params)[:role]
         ctx = role[:ctx].to_sym if role
         ctx
@@ -47,7 +47,7 @@ module LtiUtils
           valid_actions = [:show].include?(action_name)
           valid = valid_actions && params[:id] == aid if params[:id]
           if valid
-            d = DeadlineExtension.where({ assignment: aid, user: LtiUtils::Session.get_user(params) })
+            d = DeadlineExtension.where({ assignment: aid, user: Session.get_user(params) })
             contr.instance_variable_set('@student_dex', d.first) if d.any?
           end
         else
@@ -89,8 +89,14 @@ module LtiUtils
           invalid_actions << :show if manage_only_current_aid && !manage_only_current_cid
           invalid = invalid_actions.include?(action_name)
           valid = !invalid
-          valid = Session.my_cid?(params[:id], params) if params[:id] && action_name != :mine && valid
-          valid = params[:id] == cid && allow_course_delete if params[:id] && action_name == :destroy && valid
+          if params[:id] && action_name != :mine && valid
+            valid = Session.my_cid?(params[:id], params) ## is my course?
+            valid = params[:id].to_s == cid if manage_only_current_cid && valid
+          end
+          if params[:id] && action_name == :destroy && allow_course_delete
+            valid = params[:id] == cid # Allow only current course delete
+            valid = Session.invalidate_cid_del_if_not_first_teacher?(contr) if valid
+          end
         when :assignment
           c_id = params[:cid]
           c_id = params[:assignment][:course_id] if params[:assignment] && !c_id
@@ -100,13 +106,17 @@ module LtiUtils
                     else
                       Session.my_cid?(c_id, params)
                     end
+            valid = Session.invalidate_aid_c_if_not_first_teacher?(contr) if valid
           end
-          valid = Session.my_aid?(params[:id], params) if params[:id] && action_name != :mine
-          valid = LtiUtils::Session.aid_allow_first_teacher_only(contr) if valid
+          if params[:id] && action_name != :mine
+            valid = Session.my_aid_from_my_cid?(params[:id], params) ## is assignment from my course?
+            valid = params[:id].to_s == aid if manage_only_current_aid && valid
+            valid = Session.invalidate_aid_u_d_if_not_first_teacher?(contr) if valid
+          end
         when :deadline_extension
-          valid = Session.my_aid?(params[:aid], params) if params[:aid] && action_name == :new
-          valid = Session.my_dex_id?(params[:id], params) if params[:id] && action_name != :create
-          valid = Session.my_aid?(params[:deadline_extension][:assignment_id], params) if params[:deadline_extension] && action_name == :create
+          valid = Session.my_aid_from_my_cid?(params[:aid], params) if params[:aid] && action_name == :new
+          valid = Session.my_dex_id_from_my_aid?(params[:id], params) if params[:id] && action_name != :create
+          valid = Session.my_aid_from_my_cid?(params[:deadline_extension][:assignment_id], params) if params[:deadline_extension] && action_name == :create
         end
 
         valid
@@ -130,7 +140,7 @@ module LtiUtils
 
       sys_roles = Roles.system_roles_json
 
-      custom = LtiUtils::LaunchHelper.no_prefix_custom(@params)
+      custom = LaunchHelper.no_prefix_custom(@params)
 
       role = custom[:membership_role].split(',')
 

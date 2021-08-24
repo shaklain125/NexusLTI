@@ -1,6 +1,8 @@
 module LtiUtils
   class Session
     class << self
+      ## Http and Https checks
+
       def https_session_enabled?
         LTI_HTTPS_SESSION
       end
@@ -13,6 +15,18 @@ module LtiUtils
         return false if LTI_HTTPS_SESSION
         return LTI_ENABLE_COOKIE_TOKEN_WHEN_HTTP if LTI_HTTP_SESSION
       end
+
+      def https_session?(request)
+        is_https = request.ssl?
+        https_session_enabled? && is_https
+      end
+
+      def http_session?(request)
+        is_https = request.ssl?
+        http_session_enabled? && !is_https
+      end
+
+      ## Create and update users. Create session and course
 
       def update_user_details(u, name)
         return nil unless u
@@ -94,13 +108,16 @@ module LtiUtils
         lti_session
       end
 
+      ## Get current user from lti session
+
       def get_current_user(params)
         uid = LtiUtils.get_user_id(params)
-        return nil unless uid
-        lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: uid })
-        return nil unless lti_session.any?
+        lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: uid }) if uid
+        return nil unless (!lti_session || lti_session.any?) && lti_session && uid
         lti_session.first.user
       end
+
+      ## Logout session. Used for lti exit
 
       def logout_session(contr)
         params = contr.params
@@ -109,24 +126,18 @@ module LtiUtils
         LtiUtils.update_and_set_token(contr, LtiUtils.update_user_id(params, nil))
       end
 
+      ## Storing flash in lti token when http
+
       def http_flash(contr)
         # Set lti flashes (inside lti_token) if it's http_session as flashes will not work without session
         # Session flashes works in renders but not redirect_to
         session_nil = contr.session[:session_id].nil?
         is_http_session = http_session?(contr.request) && session_nil
-        lti_http_flash = LtiUtils.tokens_exists_and_valid?(contr.params) && is_http_session && !contr.flash.empty?
+        lti_http_flash = LtiUtils.token_exists_and_valid?(contr.params) && is_http_session && !contr.flash.empty?
         LtiUtils.flash(contr) if lti_http_flash
       end
 
-      def https_session?(request)
-        is_https = request.ssl?
-        https_session_enabled? && is_https
-      end
-
-      def http_session?(request)
-        is_https = request.ssl?
-        http_session_enabled? && !is_https
-      end
+      ## Permissions
 
       def manage_only_current_cid?
         LTI_TEACHER_MANAGE_ONLY_CURRENT_COURSE
@@ -136,41 +147,60 @@ module LtiUtils
         LTI_TEACHER_MANAGE_ONLY_CURRENT_ASSIGNMENT
       end
 
-      def allow_course_delete?(contr)
-        return false unless LTI_TEACHER_ALLOW_COURSE_DELETE
-        return first_teacher?(contr) if LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
-        true
+      def allow_course_delete?
+        LTI_TEACHER_ALLOW_COURSE_DELETE
       end
+
+      def allow_only_first_teacher_cid_delete?
+        LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
+      end
+
+      def allow_only_first_teacher_create_aid?
+        LTI_ALLOW_ONLY_FIRST_TEACHER_CREATE_ASSIGNMENT
+      end
+
+      def allow_only_first_teacher_edit_aid?
+        LTI_ALLOW_ONLY_FIRST_TEACHER_EDIT_ASSIGNMENT
+      end
+
+      def allow_only_first_teacher_delete_aid?
+        LTI_ALLOW_ONLY_FIRST_TEACHER_DELETE_ASSIGNMENT
+      end
+
+      ## First teacher only?
 
       def first_teacher?(contr)
         u = get_user(contr.params)
-        if u
-          c = contr.instance_variable_get('@cid_course')
-          if c
-            t = c.teachers.first
-            return t.id == u.id
-          end
-        end
-        false
+        c = contr.instance_variable_get('@cid_course') if u
+        t = c.teachers.first if c
+        t.nil? ? false : t.id == u.id
       end
 
-      def aid_allow_first_teacher_only(contr)
-        is_first_teacher = first_teacher?(contr)
-        valid = true
+      def invalidate_cid_del_if_not_first_teacher?(contr)
+        first_teacher?(contr) || !allow_only_first_teacher_cid_delete?
+      end
+
+      def invalidate_aid_c_if_not_first_teacher?(contr)
+        first_teacher?(contr) || !allow_only_first_teacher_create_aid?
+      end
+
+      def invalidate_aid_u_d_if_not_first_teacher?(contr)
+        valid = first_teacher?(contr)
         case contr.action_name.to_sym
-        when :new, :create
-          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_CREATE_ASSIGNMENT
         when :edit, :update
-          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_EDIT_ASSIGNMENT
+          valid ||= !allow_only_first_teacher_edit_aid?
         when :destroy
-          valid = is_first_teacher if LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
+          valid ||= !allow_only_first_teacher_delete_aid?
+        else
+          valid ||= true
         end
         valid
       end
 
-      def my_aid?(aid, params)
+      ## aid and cid checking
+
+      def my_aid_from_my_cid?(aid, params)
         return false unless aid
-        return aid.to_s == LtiUtils.get_conf(params)[:aid] if manage_only_current_aid?
         a = Assignment.find(aid.to_i)
         return false unless a
         my_cid?(a.course.id, params)
@@ -180,7 +210,6 @@ module LtiUtils
 
       def my_cid?(cid, params)
         return false unless cid
-        return cid.to_s == LtiUtils.get_conf(params)[:cid] if manage_only_current_cid?
         c = Course.find(cid.to_i)
         return false unless c
         get_user(params).my_courses.include?(c)
@@ -188,7 +217,7 @@ module LtiUtils
         false
       end
 
-      def my_dex_id?(dex_id, params)
+      def my_dex_id_from_my_aid?(dex_id, params)
         return false unless dex_id
         d = DeadlineExtension.find(dex_id.to_i)
         return false unless d
@@ -196,6 +225,8 @@ module LtiUtils
       rescue StandardError
         false
       end
+
+      ## Get Assignment from aid and cid
 
       def validate_assignment(aid, cid)
         return [nil, false] if aid.nil? || cid.nil? || !aid || !cid
@@ -207,6 +238,8 @@ module LtiUtils
         [nil, false]
       end
 
+      ## Extract course id from url
+
       def get_course_id_from_pres_url(pres_url)
         uri = URI(pres_url)
         query = URI.decode_www_form(uri.query || '')
@@ -217,6 +250,8 @@ module LtiUtils
       rescue StandardError
         nil
       end
+
+      ## Get obj from conf ids
 
       def get_user(params)
         uid = LtiUtils.get_user_id(params)
@@ -255,7 +290,7 @@ module LtiUtils
 
         LtiUtils.delete_cookie_token_not_session(cookies) if !http_valid || https_valid
 
-        raise LtiLaunch::Error, :invalid_lti_session if LtiUtils.contains_token_param(params) && !is_valid_session
+        raise LtiLaunch::Error, :invalid_lti_session if LtiUtils.token_exists?(params) && !is_valid_session
       end
 
       def raise_if_course_not_found(course)

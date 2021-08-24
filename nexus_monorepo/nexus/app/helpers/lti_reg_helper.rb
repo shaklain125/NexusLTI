@@ -12,8 +12,8 @@ module LtiRegHelper
 
   def invalid_req?
     is_lms = LtiUtils::Origin.lms_origin?(request)
-    is_valid_reg = LtiUtils::RegHelper.check_tc_profile_valid(params) # valid only when is lms
     is_same_origin = LtiUtils::Origin.same_origin?(request)
+    is_valid_reg = LtiUtils::RegHelper.check_tc_profile_valid(params) # valid only when is lms
     (is_same_origin && is_valid_reg) || ((!is_same_origin || is_lms) && !is_valid_reg)
   end
 

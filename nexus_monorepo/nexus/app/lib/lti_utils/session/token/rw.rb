@@ -1,11 +1,11 @@
 module LtiUtils
   class << self
-    def _get_token_param(params)
+    def get_token_param(params)
       params[:lti_token]
     end
 
     def get_token(params)
-      _token = _get_token_param(params)
+      _token = get_token_param(params)
       token = decrypt_json_token(_token)
       return {} if token.empty?
       token
@@ -20,7 +20,7 @@ module LtiUtils
     end
 
     def get_cookie_token_only(cookies)
-      LtiUtils::Session.http_cookie_enabled? ? cookies[:lti_token] : nil
+      Session.http_cookie_enabled? ? cookies[:lti_token] : nil
     end
 
     def set_cookie_token(cookies, session, token_encrypted)
@@ -67,7 +67,5 @@ module LtiUtils
     def set_flashes(flash, flash_lti)
       flash_lti.each { |t, m| flash[t] = m }
     end
-
-    private :_get_token_param
   end
 end

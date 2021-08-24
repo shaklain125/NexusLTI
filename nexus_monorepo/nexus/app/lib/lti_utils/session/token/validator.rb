@@ -1,43 +1,40 @@
 module LtiUtils
   class << self
-    def contains_token_param(params)
-      !_get_token_param(params).nil?
+    def token_exists?(params)
+      !get_token_param(params).nil?
     end
 
-    def invalid_token(params)
+    def invalid_token?(params)
       # check if token is invalid
-      _token = _get_token_param(params)
-      token = decrypt_json_token(_token)
+      token = decrypt_json_token(get_token_param(params))
       return true if token.empty?
       false
     end
 
-    def tokens_exists_and_valid?(params)
-      contains_token_param(params) && !invalid_token(params)
+    def token_exists_and_valid?(params)
+      token_exists?(params) && !invalid_token?(params)
     end
 
-    def cookie_token_exists(cookies, session)
-      !get_cookie_token(cookies, session).nil?
+    def token_exists_and_invalid?(params)
+      token_exists?(params) && invalid_token?(params)
     end
 
     ## Raise 3
 
-    def invalid_token_raise(params)
+    def raise_if_invalid_token(params)
       # raise if it contains token and is invalid
-      contains_token = contains_token_param(params)
-      invalid = invalid_token(params)
-      raise LtiLaunch::Error, :invalid_lti_token if contains_token && invalid
+      raise LtiLaunch::Error, :invalid_lti_token if token_exists_and_invalid?(params)
       false
     end
 
-    def contains_token_param_raise(params)
+    def raise_if_token_missing(params)
       # raise if token missing
-      raise LtiLaunch::Error, :missing_lti_token unless contains_token_param(params)
+      raise LtiLaunch::Error, :missing_lti_token unless token_exists?(params)
     end
 
     def raise_if_contains_token(params)
       # raise if token exists
-      raise LtiLaunch::Error, :invalid_lti_user if contains_token_param(params)
+      raise LtiLaunch::Error, :invalid_lti_user if token_exists?(params)
     end
   end
 end

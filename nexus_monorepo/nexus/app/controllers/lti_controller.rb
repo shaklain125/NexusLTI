@@ -1,24 +1,17 @@
 class LtiController < ApplicationController
   include LtiHelper
 
-  before_action :check_if_signed_in, except: [:launch]
-  before_action :contains_token_param, except: [:launch]
-  before_action :check_launch, only: [:launch]
+  before_action :check_lti_session, except: [:launch]
   skip_before_action :verify_authenticity_token, only: [:launch]
 
-  def check_if_signed_in
+  def check_lti_session
     raise LtiLaunch::Error, :missing_lti_session unless user_signed_in?
-  end
-
-  def check_launch
-    @lti_launch = LtiLaunch.check_launch!(LtiUtils.models.parsed_lti_message(request))
-  end
-
-  def contains_token_param
-    LtiUtils.contains_token_param_raise(params)
+    LtiUtils.raise_if_token_missing(params)
   end
 
   def launch
+    @lti_launch = LtiLaunch.check_launch!(LtiUtils.models.parsed_lti_message(request))
+
     @message = @lti_launch && @lti_launch.message
     raise LtiLaunch::Error, :invalid_lti_launch_message unless @message
 
@@ -35,7 +28,7 @@ class LtiController < ApplicationController
     pres_url = params[:launch_presentation_return_url]
     course_id = LtiUtils::Session.get_course_id_from_pres_url(pres_url).to_s.strip
     course_id = custom[:coursesection_sourcedid].to_s.strip if course_id.empty?
-    raise LtiLaunch::Error, 'MSG: Course ID number required. You can add set it in the course settings of the LMS.' if course_id.empty?
+    raise LtiLaunch::Error, 'MSG: Course ID number required. You can set it in the course settings of the LMS.' if course_id.empty?
 
     config = custom[:lti_config]
     config = LtiUtils.decrypt_json(config)
@@ -102,9 +95,7 @@ class LtiController < ApplicationController
     redirect_to root_path
   end
 
-  def configure
-    raise LtiLaunch::Error, :invalid_teacher unless current_user
-  end
+  def configure; end
 
   def configure_generate
     aid = params[:assignment]
