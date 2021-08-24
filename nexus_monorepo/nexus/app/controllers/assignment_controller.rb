@@ -152,7 +152,7 @@ class AssignmentController < ApplicationController
 
       if @is_manage_assignment
         if @aid == assignment.id.to_s
-          LtiUtils.update_and_set_token(self, LtiUtils.gen_data_update(params))
+          LtiUtils::Token.update_and_set_token(self, LtiUtils::Token.gen_data_update(params))
           redirect_to lti_configure_path
         else
           redirect_to lti_manage_assignment_path

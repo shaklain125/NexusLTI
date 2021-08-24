@@ -6,8 +6,8 @@ module LtiUtils
 
     class << self
       def get_ctx(params)
-        return nil if LtiUtils.invalid_token?(params)
-        role = LtiUtils.get_token(params)[:role]
+        return nil if LtiUtils::Token.invalid?(params)
+        role = LtiUtils::Token.get_role(params)
         ctx = role[:ctx].to_sym if role
         ctx
       end

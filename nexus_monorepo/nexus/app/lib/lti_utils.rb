@@ -15,6 +15,7 @@ module LtiUtils
   require_dependency 'lti_utils/shared/ims'
   require_dependency 'lti_utils/shared/rh_helper'
   require_dependency 'lti_utils/shared/error_handlers'
+  require_dependency 'lti_utils/shared/init'
 
   require_dependency 'lti_utils/registration/reg_helper'
   require_dependency 'lti_utils/registration/tool_proxy_reg'

@@ -50,15 +50,15 @@ module LtiUtils
       def raise_if_invalid_token_ip(contr)
         params = contr.params
         r_ip = contr.request.remote_ip
-        ip = LtiUtils.get_token_ip(params)
+        ip = LtiUtils::Token.get_ip(params)
         not_nil = r_ip && ip
-        raise LtiLaunch::Error, :invalid_origin if ((not_nil && (r_ip != ip)) || !not_nil) && LtiUtils.token_exists?(params)
+        raise LtiLaunch::Error, :invalid_origin if ((not_nil && (r_ip != ip)) || !not_nil) && LtiUtils::Token.exists?(params)
       end
 
       def raise_if_null_referrer_and_lti(contr)
         referrer = contr.request.referrer
         params = contr.params
-        raise LtiLaunch::Error, :invalid_origin if !referrer && LtiUtils.token_exists?(params)
+        raise LtiLaunch::Error, :invalid_origin if !referrer && LtiUtils::Token.exists?(params)
       end
     end
   end

@@ -6,7 +6,7 @@ class LtiController < ApplicationController
 
   def check_lti_session
     raise LtiLaunch::Error, :missing_lti_session unless user_signed_in?
-    LtiUtils.raise_if_token_missing(params)
+    LtiUtils::Token.raise_if_missing(params)
   end
 
   def launch
@@ -62,14 +62,14 @@ class LtiController < ApplicationController
     aid = config[:aid]
     cid = course.id.to_s
 
-    LtiUtils.update_and_set_token(self, LtiUtils.update_user_id(params, user.nil? ? nil : user.id))
+    LtiUtils::Token.update_and_set_token(self, LtiUtils::Token.update_user_id(params, user.nil? ? nil : user.id))
 
     aid_a, aid_valid = LtiUtils::Session.validate_assignment(aid, cid)
 
     if is_student
       if aid_valid
         if aid_a.started?
-          LtiUtils.update_and_set_token(self, { submission: { aid: aid, cid: cid } })
+          LtiUtils::Token.update_and_set_token(self, { submission: { aid: aid, cid: cid } })
           redirect_to new_submission_path(aid: aid)
         else
           raise LtiLaunch::Error, :assigment_not_started
@@ -80,11 +80,11 @@ class LtiController < ApplicationController
       return
     elsif is_teacher
       if aid_valid
-        LtiUtils.update_and_set_token(self, { config: { aid: aid, cid: cid } })
+        LtiUtils::Token.update_and_set_token(self, { config: { aid: aid, cid: cid } })
         redirect_to action: :manage_assignment
       else
         flash[:error] = "Assignment from LTI configuration does not exist" unless aid.nil?
-        LtiUtils.update_and_set_token(self, { generator: { cid: cid } })
+        LtiUtils::Token.update_and_set_token(self, { generator: { cid: cid } })
         redirect_to action: :configure
       end
       return
@@ -112,7 +112,7 @@ class LtiController < ApplicationController
     @assignment, aid_valid = LtiUtils::Session.validate_assignment(@aid, @cid)
     unless aid_valid
       flash[:error] = "Assignment from LTI configuration does not exist"
-      LtiUtils.update_and_set_token(self, LtiUtils.gen_data_update(params))
+      LtiUtils::Token.update_and_set_token(self, LtiUtils::Token.gen_data_update(params))
       redirect_to action: :configure
     end
   end

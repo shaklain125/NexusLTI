@@ -18,7 +18,7 @@ module LtiUtils::Controllers
     protected
 
     def authenticate_user!
-      return if current_user && LtiUtils.token_exists?(params)
+      return if current_user && LtiUtils::Token.exists?(params)
       super
     end
 
@@ -27,7 +27,7 @@ module LtiUtils::Controllers
     end
 
     def current_user
-      return LtiUtils::Session.get_current_user(params) unless LtiUtils.invalid_token?(params)
+      return LtiUtils::Session.get_current_user(params) unless LtiUtils::Token.invalid?(params)
       if devise_current_user && (@is_lti_reg || @is_lti_reg_error)
         sign_out(devise_current_user)
         return nil

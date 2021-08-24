@@ -32,23 +32,23 @@ module LtiHelper
     if @is_lms_or_launch
       params.delete(:lti_token)
     else
-      params[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
+      params[:lti_token] = LtiUtils::Token.get_cookie_token(cookies, session)
     end
 
     @is_teacher = LtiUtils::LtiRole.teacher?(params)
     @is_student = LtiUtils::LtiRole.student?(params)
 
-    is_invalid_lti_role = !@is_teacher && !@is_student && !LtiUtils.invalid_token?(params)
+    is_invalid_lti_role = !@is_teacher && !@is_student && !LtiUtils::Token.invalid?(params)
     params.delete(:lti_token) if !@is_lms_or_launch && is_invalid_lti_role
 
-    @is_lti = LtiUtils.token_exists?(params)
+    @is_lti = LtiUtils::Token.exists?(params)
 
     contr_act = { controller_name: controller_name, action_name: action_name }
-    @is_config_generator = LtiUtils.from_generator?(params, **contr_act)
-    @is_manage_assignment = LtiUtils.from_manage_assignment?(params, **contr_act)
-    @is_submission = LtiUtils.from_submission?(params, **contr_act)
+    @is_config_generator = LtiUtils::Token.from_generator?(params, **contr_act)
+    @is_manage_assignment = LtiUtils::Token.from_manage_assignment?(params, **contr_act)
+    @is_submission = LtiUtils::Token.from_submission?(params, **contr_act)
 
-    @aid, @cid = LtiUtils.get_conf(params, :aid, :cid)
+    @aid, @cid = LtiUtils::Token.get_conf(params, :aid, :cid)
     @cid_course = LtiUtils::Session.get_course(params)
     @submission_path = new_submission_path(aid: @aid) if @is_submission
 
@@ -56,7 +56,7 @@ module LtiHelper
     @manage_only_current_aid = LtiUtils::Session.manage_only_current_aid?
     @allow_course_delete = LtiUtils::Session.allow_course_delete?
 
-    LtiUtils.set_flashes(flash, LtiUtils.get_flashes!(self)) if LtiUtils.token_exists_and_valid?(params)
+    LtiUtils::Token.set_flashes(flash, LtiUtils::Token.get_flashes!(self)) if LtiUtils::Token.exists_and_valid?(params)
 
     validate_token unless @is_lms_or_launch
     block_controllers unless @is_lms_or_launch
@@ -67,7 +67,7 @@ module LtiHelper
     is_same_origin = LtiUtils::Origin.same_origin?(request)
     valid_methods = %w[POST PATCH].include?(request.method)
     token = {}
-    token[:lti_token] = LtiUtils.get_cookie_token(cookies, session)
+    token[:lti_token] = LtiUtils::Token.get_cookie_token(cookies, session)
     is_student = LtiUtils::LtiRole.student?(token)
     is_teacher = LtiUtils::LtiRole.teacher?(token)
     is_valid_lti_role = is_student || is_teacher
@@ -75,13 +75,14 @@ module LtiHelper
   end
 
   def validate_token
-    LtiUtils.raise_if_invalid_token(params)
+    LtiUtils::Token.raise_if_invalid(params)
     LtiUtils::Session.raise_if_course_not_found(@cid_course) if @cid && request.referrer
     LtiUtils::LtiRole.if_student_show_student_pages_raise(self)
     LtiUtils::Origin.raise_if_null_referrer_and_lti(self)
     LtiUtils::LtiRole.if_teacher_show_teacher_pages_raise(self)
     LtiUtils::Session.raise_if_invalid_session(self)
     LtiUtils::Origin.raise_if_invalid_token_ip(self)
+    LtiUtils::Token.raise_if_exists(params) unless current_user
   end
 
   def block_controllers
@@ -96,9 +97,9 @@ module LtiHelper
   end
 
   def exit_lti
-    LtiUtils::Session.logout_session(self) unless LtiUtils.invalid_token?(params)
+    LtiUtils::Session.logout_session(self) unless LtiUtils::Token.invalid?(params)
     sign_out(current_user)
-    LtiUtils.delete_cookie_token(cookies, session)
+    LtiUtils::Token.delete_cookie_token(cookies, session)
   end
 
   def disable_xframe_header_lti

@@ -3,8 +3,7 @@ LTI_RESOURCE_HANDLERS = LtiUtils::RHHelper.resource_handlers!.freeze
 LTI_RH_ALL_CAPS = LtiUtils::RHHelper.all_caps!.freeze
 
 # Clean up
-LtiTool.clean_up!
-LtiRegistration.clean_up!
+LtiUtils::Init.clean_up!
 
 # Cipher keys used to encrypt LTI token and config
 LTI_CONFIG_SECRET = '8cb13f93bf4b9bd12846d08c8814755d35fea3ff491bf08a0bbf381fe9a80892703ee58b072c18acc376d72b0d42ad392e42c63309e46e3aff63b450c396520d'.freeze

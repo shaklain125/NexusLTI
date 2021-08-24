@@ -101,7 +101,7 @@ module LtiUtils
         return nil unless user
         session_exists = LtiSession.where({ user: user.id })
         session_exists.delete_all if session_exists.any?
-        tool = LtiTool.find(LtiUtils.get_tool_id(params))
+        tool = LtiTool.find(LtiUtils::Token.get_tool_id(params))
         return nil unless tool
         lti_session = LtiSession.new(lti_tool: tool, user: user)
         lti_session.save!
@@ -111,8 +111,8 @@ module LtiUtils
       ## Get current user from lti session
 
       def get_current_user(params)
-        uid = LtiUtils.get_user_id(params)
-        lti_session = LtiSession.where({ lti_tool: LtiUtils.get_tool_id(params), user: uid }) if uid
+        uid = LtiUtils::Token.get_user_id(params)
+        lti_session = LtiSession.where({ lti_tool: LtiUtils::Token.get_tool_id(params), user: uid }) if uid
         return nil unless (!lti_session || lti_session.any?) && lti_session && uid
         lti_session.first.user
       end
@@ -121,9 +121,9 @@ module LtiUtils
 
       def logout_session(contr)
         params = contr.params
-        lti_session = LtiSession.find_by_lti_tool_id(LtiUtils.get_tool_id(params))
+        lti_session = LtiSession.find_by_lti_tool_id(LtiUtils::Token.get_tool_id(params))
         lti_session.delete if lti_session
-        LtiUtils.update_and_set_token(contr, LtiUtils.update_user_id(params, nil))
+        LtiUtils::Token.update_and_set_token(contr, LtiUtils::Token.update_user_id(params, nil))
       end
 
       ## Storing flash in lti token when http
@@ -133,8 +133,8 @@ module LtiUtils
         # Session flashes works in renders but not redirect_to
         session_nil = contr.session[:session_id].nil?
         is_http_session = http_session?(contr.request) && session_nil
-        lti_http_flash = LtiUtils.token_exists_and_valid?(contr.params) && is_http_session && !contr.flash.empty?
-        LtiUtils.flash(contr) if lti_http_flash
+        lti_http_flash = LtiUtils::Token.exists_and_valid?(contr.params) && is_http_session && !contr.flash.empty?
+        LtiUtils::Token.flash(contr) if lti_http_flash
       end
 
       ## Permissions
@@ -254,7 +254,7 @@ module LtiUtils
       ## Get obj from conf ids
 
       def get_user(params)
-        uid = LtiUtils.get_user_id(params)
+        uid = LtiUtils::Token.get_user_id(params)
         return nil unless uid
         User.find(uid)
       rescue StandardError
@@ -262,7 +262,7 @@ module LtiUtils
       end
 
       def get_course(params)
-        cid = LtiUtils.get_conf(params)[:cid]
+        cid = LtiUtils::Token.get_conf(params)[:cid]
         return nil unless cid
         Course.find(cid)
       rescue StandardError
@@ -278,7 +278,7 @@ module LtiUtils
         params = contr.params
         id = session[:session_id]
         session_token = session[:lti_token]
-        cookies_token = LtiUtils.get_cookie_token_only(cookies)
+        cookies_token = LtiUtils::Token.get_cookie_only(cookies)
 
         is_https_session_valid = id && !session_token.nil? && cookies_token.nil?
         is_http_session_valid = ((id && session_token.nil?) || !id) && !cookies_token.nil?
@@ -288,9 +288,9 @@ module LtiUtils
 
         is_valid_session = (https_valid || http_valid)
 
-        LtiUtils.delete_cookie_token_not_session(cookies) if !http_valid || https_valid
+        LtiUtils::Token.delete_cookie_only(cookies) if !http_valid || https_valid
 
-        raise LtiLaunch::Error, :invalid_lti_session if LtiUtils.token_exists?(params) && !is_valid_session
+        raise LtiLaunch::Error, :invalid_lti_session if LtiUtils::Token.exists?(params) && !is_valid_session
       end
 
       def raise_if_course_not_found(course)
