@@ -1,19 +1,7 @@
 module LtiUtils
   class << self
-    def token_secret
-      LTI_TOKEN_SECRET
-    end
-
     def config_secret
-      LTI_CONFIG_SECRET
-    end
-
-    def encrypt_json_token(str)
-      encrypt_json(str, key: token_secret)
-    end
-
-    def decrypt_json_token(str)
-      decrypt_json(str, key: token_secret)
+      Setup.config.config_secret
     end
 
     def encrypt_json(str, key: nil)
@@ -24,7 +12,7 @@ module LtiUtils
       CryptoTool.new(key || config_secret).decrypt_json(str)
     end
 
-    private :token_secret, :config_secret
+    private :config_secret
   end
 
   class CryptoTool

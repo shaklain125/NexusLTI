@@ -63,7 +63,7 @@ module LtiHelper
   end
 
   def lti_request?
-    return if controller_name.to_sym == :lti_registration
+    return false if controller_name.to_sym == :lti_registration
     is_same_origin = LtiUtils::Origin.same_origin?(request)
     valid_methods = %w[POST PATCH].include?(request.method)
     token = {}

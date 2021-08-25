@@ -7,7 +7,7 @@ module LtiUtils
 
       def invalid?(params)
         # check if token is invalid
-        token = LtiUtils.decrypt_json_token(get_token_param(params))
+        token = decrypt(get_token_param(params))
         token.empty?
       end
 

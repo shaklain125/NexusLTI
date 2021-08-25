@@ -5,6 +5,7 @@ module LtiUtils
   require_dependency 'lti_utils/utils/uri_helper'
   require_dependency 'lti_utils/utils/cookie_helper'
   require_dependency 'lti_utils/utils/crypto_tool'
+  require_dependency 'lti_utils/utils/config_gen'
 
   require_dependency 'lti_utils/session/launch_helper'
   require_dependency 'lti_utils/session/lti_role'
@@ -15,7 +16,7 @@ module LtiUtils
   require_dependency 'lti_utils/shared/ims'
   require_dependency 'lti_utils/shared/rh_helper'
   require_dependency 'lti_utils/shared/error_handlers'
-  require_dependency 'lti_utils/shared/init'
+  require_dependency 'lti_utils/shared/setup'
 
   require_dependency 'lti_utils/registration/reg_helper'
   require_dependency 'lti_utils/registration/tool_proxy_reg'

@@ -4,7 +4,7 @@ module LtiUtils
       ## Resource Handlers and LTI paths
 
       def resource_handlers
-        LTI_RESOURCE_HANDLERS
+        Setup.config.resource_handler[:all]
       end
 
       def resource_handlers!
@@ -44,7 +44,7 @@ module LtiUtils
       end
 
       def all_caps
-        LTI_RH_ALL_CAPS
+        Setup.config.resource_handler[:all_caps]
       end
 
       def all_caps!

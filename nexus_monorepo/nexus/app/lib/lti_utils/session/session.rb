@@ -140,32 +140,44 @@ module LtiUtils
 
       ## Permissions
 
+      ## Management permissions
+
+      def management_permissions
+        Setup.config.management!
+      end
+
       def manage_only_current_cid?
-        LTI_TEACHER_MANAGE_ONLY_CURRENT_COURSE
+        management_permissions.only_current_course
       end
 
       def manage_only_current_aid?
-        LTI_TEACHER_MANAGE_ONLY_CURRENT_ASSIGNMENT
+        management_permissions.only_current_assignment
       end
 
       def allow_course_delete?
-        LTI_TEACHER_ALLOW_COURSE_DELETE
+        management_permissions.delete_course
+      end
+
+      ## First teacher only permissions
+
+      def first_teacher_only_permissions
+        Setup.config.first_teacher_only!
       end
 
       def allow_only_first_teacher_cid_delete?
-        LTI_ALLOW_ONLY_FIRST_TEACHER_COURSE_DELETE
+        first_teacher_only_permissions.delete_course
       end
 
       def allow_only_first_teacher_create_aid?
-        LTI_ALLOW_ONLY_FIRST_TEACHER_CREATE_ASSIGNMENT
+        first_teacher_only_permissions.create_assignment
       end
 
       def allow_only_first_teacher_edit_aid?
-        LTI_ALLOW_ONLY_FIRST_TEACHER_EDIT_ASSIGNMENT
+        first_teacher_only_permissions.edit_assignment
       end
 
       def allow_only_first_teacher_delete_aid?
-        LTI_ALLOW_ONLY_FIRST_TEACHER_DELETE_ASSIGNMENT
+        first_teacher_only_permissions.delete_assignment
       end
 
       ## First teacher only?

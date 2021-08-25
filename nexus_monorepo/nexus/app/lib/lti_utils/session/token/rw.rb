@@ -8,7 +8,7 @@ module LtiUtils
       end
 
       def get_token(params)
-        token = LtiUtils.decrypt_json_token(get_token_param(params))
+        token = decrypt(get_token_param(params))
         return {} if token.empty?
         token
       end
@@ -33,6 +33,20 @@ module LtiUtils
         end
       end
 
+      ## Encryption
+
+      def token_secret
+        Setup.config.token_secret
+      end
+
+      def encrypt(token_data)
+        LtiUtils.encrypt_json(token_data, key: token_secret)
+      end
+
+      def decrypt(token_data)
+        LtiUtils.decrypt_json(token_data, key: token_secret)
+      end
+
       ## Update
 
       def update_user_id(params, id)
@@ -45,7 +59,7 @@ module LtiUtils
 
       def update_and_set_token(contr, json)
         params = contr.params
-        params[:lti_token] = LtiUtils.encrypt_json_token(update_merge_token(params, json))
+        params[:lti_token] = encrypt(update_merge_token(params, json))
         set_cookie_token(contr.request.cookies, contr.session, params[:lti_token])
       end
 
@@ -84,7 +98,7 @@ module LtiUtils
         flash_lti.each { |t, m| flash[t] = m }
       end
 
-      private :get_token_param, :get_token
+      private :get_token_param, :get_token, :token_secret
     end
   end
 end

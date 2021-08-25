@@ -2,7 +2,7 @@ module LtiUtils
   class Origin
     class << self
       def lms_hosts
-        LTI_VALID_LMS_ORIGIN_HOSTS
+        Setup.config.lms_hosts
       end
 
       def lms_origin?(request)

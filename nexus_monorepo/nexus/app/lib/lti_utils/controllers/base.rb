@@ -5,7 +5,6 @@ module LtiUtils::Controllers
     protect_from_forgery with: :null_session
 
     before_action :lti_auth
-    skip_before_action :verify_authenticity_token, if: :lti_request?
     after_action :disable_xframe_header_lti
     rescue_from LtiLaunch::Error, with: :handle_lti_error
     rescue_from LtiRegistration::Error, with: :handle_lti_reg_error
@@ -19,6 +18,11 @@ module LtiUtils::Controllers
 
     def authenticate_user!
       return if current_user && LtiUtils::Token.exists?(params)
+      super
+    end
+
+    def verify_authenticity_token
+      return true if lti_request?
       super
     end
 

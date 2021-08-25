@@ -80,9 +80,7 @@ module LtiUtils
       end
 
       def tc_profile_exists?(tc_profile_url)
-        !Faraday.new.get(tc_profile_url).body.empty?
-      rescue StandardError
-        false
+        !URIHelper.http_get_body_empty?(tc_profile_url)
       end
 
       private :tp_reg_service

@@ -17,6 +17,25 @@ module LtiUtils
           nil
         end
       end
+
+      def get_domain(uri)
+        return nil unless uri
+        begin
+          URI.join(uri, "/").to_s
+        rescue StandardError
+          nil
+        end
+      end
+
+      def http_get_body_empty?(uri)
+        Faraday.new.get(uri).body.empty?
+      rescue StandardError
+        true
+      end
+
+      def domanin_exists?(uri)
+        !http_get_body_empty?(get_domain(uri))
+      end
     end
   end
 end

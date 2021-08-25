@@ -45,7 +45,7 @@ class LtiController < ApplicationController
       ip_addr: request.remote_ip
     }
 
-    params[:lti_token] = LtiUtils.encrypt_json_token(token_data)
+    params[:lti_token] = LtiUtils::Token.encrypt(token_data)
 
     is_student = LtiUtils::LtiRole.student?(params)
     is_teacher = LtiUtils::LtiRole.teacher?(params)

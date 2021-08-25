@@ -12,8 +12,9 @@ class LtiTool < ActiveRecord::Base
   def self.clean_up!
     all.each do |tool|
       tc_profile_url = tool.tool_proxy.tool_consumer_profile
+      domain_exists = LtiUtils::URIHelper.domanin_exists?(tc_profile_url)
       tc_profile_exists = LtiUtils.services.tc_profile_exists?(tc_profile_url)
-      tool.destroy unless tc_profile_exists
+      tool.destroy if domain_exists && !tc_profile_exists
     end
   end
 end

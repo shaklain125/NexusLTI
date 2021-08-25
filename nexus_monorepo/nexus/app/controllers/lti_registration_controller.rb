@@ -7,7 +7,7 @@ class LtiRegistrationController < ApplicationController
 
   def register
     if LtiUtils::Session.https_session?(request) && session_exists?
-      session[:lti_reg_token] = LtiUtils.encrypt_json_token({ reg_params: params })
+      session[:lti_reg_token] = LtiUtils::Token.encrypt({ reg_params: params })
       @registration = LtiUtils::RegHelper.create_reg_obj(self, params)
     else
       @registration = LtiUtils::RegHelper.create_and_save_reg_obj(self, params)
@@ -28,7 +28,7 @@ class LtiRegistrationController < ApplicationController
     reg_token = session[:lti_reg_token]
 
     if reg_token
-      reg_params = LtiUtils.decrypt_json_token(reg_token)[:reg_params]
+      reg_params = LtiUtils::Token.decrypt(reg_token)[:reg_params]
       reg_params = LtiUtils::HashHelper.stringify(reg_params)
       @registration = LtiUtils::RegHelper.create_and_save_reg_obj(self, reg_params)
     end

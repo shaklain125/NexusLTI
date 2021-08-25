@@ -54,6 +54,5 @@ module Fyp
     config.uat_port = ENV['NEXUS_UAT_PORT'] || 3009
 
     config.autoload_paths += %W[#{config.root}/lib] # Auto load lib dir for LTI
-    config.action_dispatch.default_headers.delete "X-Frame-Options" # Allow iframe everywhere for LTI
   end
 end
