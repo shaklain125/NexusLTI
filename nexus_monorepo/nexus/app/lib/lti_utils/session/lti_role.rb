@@ -64,6 +64,7 @@ module LtiUtils
         manage_only_current_cid = contr.instance_variable_get('@manage_only_current_cid')
         manage_only_current_aid = contr.instance_variable_get('@manage_only_current_aid')
         allow_course_delete = contr.instance_variable_get('@allow_course_delete')
+        aid = contr.instance_variable_get('@aid')
         cid = contr.instance_variable_get('@cid')
         valid = true
 
